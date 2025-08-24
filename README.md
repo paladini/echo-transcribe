@@ -1,48 +1,31 @@
 # EchoTranscribe 🎙️
 
-Uma aplicação de desktop open-source para transcrição de áudio usando IA local. Privado, seguro e eficiente.
+An open-source desktop application for audio transcription using local AI. Private, secure and efficient.
 
 <img width="995" height="929" alt="image" src="https://github.com/user-attachments/assets/e3399f9a-5f09-4eeb-9d7d-d3afdf50e7a2" />
 
-## ✨ Características
+## ✨ Features
 
-- 🔒 **Completamente Local**: Seus arquivos de áudio nunca saem do seu computador
-- 🤖 **IA Avançada**: Usa modelos Whisper para transcrição de alta qualidade
-- 🎨 **Interface Moderna**: Design clean e intuitivo com suporte a tema escuro
-- 📁 **Múltiplos Formatos**: Suporte para MP3, WAV, FLAC, M4A, OGG e WebM
-- 🔄 **Transcrição em Lote**: Processe múltiplos arquivos simultaneamente
-- 🌍 **Detecção Automática**: Identifica automaticamente o idioma do áudio
-- ⏱️ **Timestamps Precisos**: Timestamps por palavra para navegação detalhada
-- 💾 **Exportação Flexível**: Exporte para TXT, SRT ou JSON
-- ⚙️ **Configurações Persistentes**: Tema escuro/claro e idioma salvos entre sessões
-- � **Multilíngue**: Interface em inglês, português e espanhol (expansível)
-- ⚡ **Performance**: Otimizado para velocidade e eficiência
-- 🖥️ **Cross-Platform**: Funciona no Windows, macOS e Linux🎙️
+- 🔒 **Completely Local**: Your audio files never leave your computer
+- 🤖 **Advanced AI**: Uses Whisper models for high-quality transcription
+- 🎨 **Modern Interface**: Clean and intuitive design with dark theme support
+- 📁 **Multiple Formats**: Support for MP3, WAV, FLAC, M4A, OGG and WebM
+- 🔄 **Batch Transcription**: Process multiple files simultaneously
+- 🌍 **Automatic Detection**: Automatically identifies audio language
+- ⏱️ **Precise Timestamps**: Word-level timestamps for detailed navigation
+- 💾 **Flexible Export**: Export to TXT, SRT or JSON
+- ⚙️ **Persistent Settings**: Dark/light theme and language saved between sessions
+- 🌐 **Multilingual**: Interface in English, Portuguese and Spanish (expandable)
+- ⚡ **Performance**: Optimized for speed and efficiency
+- 🖥️ **Cross-Platform**: Works on Windows, macOS and Linux
 
-Uma aplicação de desktop open-source para transcrição de áudio usando IA local. Privado, seguro e eficiente.
+## 🚀 Quick Start
 
-![EchoTranscribe Screenshot](docs/screenshot.png)
+### Prerequisites
 
-## ✨ Características
-
-- 🔒 **Completamente Local**: Seus arquivos de áudio nunca saem do seu computador
-- 🤖 **IA Avançada**: Usa modelos Whisper para transcrição de alta qualidade
-- 🎨 **Interface Moderna**: Design clean e intuitivo com suporte a tema escuro
-- 📁 **Múltiplos Formatos**: Suporte para MP3, WAV, FLAC, M4A, OGG e WebM
-- � **Transcrição em Lote**: Processe múltiplos arquivos simultaneamente
-- 🌍 **Detecção Automática**: Identifica automaticamente o idioma do áudio
-- ⏱️ **Timestamps Precisos**: Timestamps por palavra para navegação detalhada
-- �💾 **Exportação Flexível**: Exporte para TXT, SRT ou JSON
-- ⚡ **Performance**: Otimizado para velocidade e eficiência
-- 🌐 **Cross-Platform**: Funciona no Windows, macOS e Linux
-
-## 🚀 Início Rápido
-
-### Pré-requisitos
-
-- **Node.js** (versão 18 ou superior)
-- **Python** (versão 3.8 ou superior)
-- **Rust** (para compilação do Tauri)
+- **Node.js** (version 18 or higher)
+- **Python** (version 3.8 or higher)
+- **Rust** (for Tauri compilation)
 
 #### Linux (Ubuntu/Debian)
 ```bash
@@ -52,196 +35,212 @@ sudo apt install libwebkit2gtk-4.0-dev libssl-dev libgtk-3-dev libayatana-appind
 
 #### macOS
 ```bash
-# Usando Homebrew
+# Using Homebrew
 brew install --cask xcode-command-line-tools
 ```
 
 #### Windows
-No Windows, você precisará do Microsoft Visual Studio C++ Build Tools.
+On Windows, you'll need Microsoft Visual Studio C++ Build Tools.
 
-### Instalação para Desenvolvimento
+### Development Installation
 
-1. **Clone o repositório**
+1. **Clone the repository**
 ```bash
-git clone https://github.com/seu-usuario/echo-transcribe.git
+git clone https://github.com/your-username/echo-transcribe.git
 cd echo-transcribe
 ```
 
-2. **Instale as dependências do Node.js**
+2. **Install Node.js dependencies**
 ```bash
 npm install
 ```
 
-3. **Configure o ambiente Python**
+3. **Setup Python environment and backend**
 ```bash
-python -m venv .venv
-source .venv/bin/activate  # No Windows: .venv\Scripts\activate
-pip install -r src-tauri/backend/requirements.txt
+# The startup script will create venv and install dependencies automatically
+chmod +x start-backend.sh  # Linux/macOS only
 ```
 
-4. **Execute em modo de desenvolvimento**
+4. **Run in development mode**
+
+**Option A: Automatic (Recommended)**
 ```bash
-npm run tauri dev
+npm run dev:full  # Starts both backend and frontend
 ```
 
-### Instalação para Produção
+**Option B: Manual (Better for debugging)**
+```bash
+# Terminal 1 - Start backend
+./start-backend.sh        # Linux/macOS
+# or
+./start-backend.bat       # Windows
 
-Baixe a versão mais recente dos [Releases](https://github.com/seu-usuario/echo-transcribe/releases) para seu sistema operacional.
+# Terminal 2 - Start frontend
+npm run tauri:dev
+```
 
-## 🎯 Como Usar
+5. **Verify setup**
+   - Backend API: http://localhost:8000/docs
+   - Frontend: Opens automatically in Tauri window
 
-1. **Selecione arquivo(s) de áudio**
-   - Arraste e solte um ou múltiplos arquivos na área indicada
-   - Ou clique para selecionar arquivos (máximo 10 por vez)
+> 📖 **For detailed development setup**, see [DEVELOPMENT.md](DEVELOPMENT.md)
 
-2. **Escolha o modelo de IA**
-   - **Tiny/Base**: Rápido, ideal para testes
-   - **Small**: Melhor qualidade, velocidade média
-   - **Medium**: Alta qualidade, mais lento
+### Production Installation
 
-3. **Configure as opções**
-   - Deixe a detecção automática de idioma habilitada (recomendado)
-   - Ou especifique manualmente o idioma do áudio
+Download the latest version from [Releases](https://github.com/your-username/echo-transcribe/releases) for your operating system.
 
-4. **Inicie a transcrição**
-   - Clique em "Iniciar Transcrição"
-   - Acompanhe o progresso em tempo real
-   - Para lotes, veja o progresso de cada arquivo
+## 🎯 How to Use
 
-5. **Visualize e edite os resultados**
-   - Veja o texto transcrito para cada arquivo
-   - Navegue pelos timestamps de cada palavra
-   - Edite o texto se necessário
+1. **Select audio file(s)**
+   - Drag and drop one or multiple files to the designated area
+   - Or click to select files (maximum 10 at once)
 
-6. **Exporte os resultados**
-   - Exporte individualmente ou em lote
-   - Formatos disponíveis: TXT, SRT, JSON
+2. **Choose AI model**
+   - **Tiny/Base**: Fast, ideal for testing
+   - **Small**: Better quality, medium speed
+   - **Medium**: High quality, slower
 
-7. **Configure a aplicação**
-   - Acesse as configurações para personalizar tema e idioma
-   - Suas preferências são salvas automaticamente para próximas sessões
+3. **Configure options**
+   - Leave automatic language detection enabled (recommended)
+   - Or manually specify the audio language
 
-## 🛠️ Tecnologias
+4. **Start transcription**
+   - Click "Start Transcription"
+   - Track progress in real-time
+   - For batches, see progress for each file
+
+5. **View and edit results**
+   - See transcribed text for each file
+   - Navigate through word timestamps
+   - Edit text if necessary
+
+6. **Export results**
+   - Export individually or in batch
+   - Available formats: TXT, SRT, JSON
+
+7. **Configure application**
+   - Access settings to customize theme and language
+   - Your preferences are automatically saved for future sessions
+
+## 🛠️ Technologies
 
 - **Frontend**: React + TypeScript + Tailwind CSS
 - **Desktop**: Tauri (Rust)
 - **Backend**: FastAPI (Python)
-- **IA**: faster-whisper (OpenAI Whisper)
+- **AI**: faster-whisper (OpenAI Whisper)
 - **UI Components**: Radix UI + shadcn/ui
 
-## 📋 Comandos Disponíveis
+## 📋 Available Commands
 
 ```bash
-# Desenvolvimento
-npm run dev          # Iniciar servidor de desenvolvimento do frontend
-npm run tauri dev    # Iniciar aplicação Tauri em modo de desenvolvimento
+# Development
+npm run dev          # Start frontend development server
+npm run tauri dev    # Start Tauri application in development mode
 
-# Produção
-npm run build        # Build do frontend
-npm run tauri build  # Build da aplicação completa
+# Production
+npm run build        # Build frontend
+npm run tauri build  # Build complete application
 
 # Backend (Python)
 cd src-tauri/backend
-python main.py       # Iniciar servidor backend standalone
+python main.py       # Start standalone backend server
 ```
 
-## 🔧 Configuração
+## 🔧 Configuration
 
-### Modelos de IA
+### AI Models
 
-O AudioScribe baixa automaticamente os modelos de IA conforme necessário. Os modelos ficam armazenados em:
+AudioScribe automatically downloads AI models as needed. Models are stored in:
 
 - **Linux/macOS**: `~/.echo-transcribe/models/`
 - **Windows**: `%USERPROFILE%\\.echo-transcribe\\models\\`
 
-### Formatos Suportados
+### Supported Formats
 
-| Formato | Extensão | Tamanho Máximo |
-|---------|----------|----------------|
-| MP3     | .mp3     | 500MB          |
-| WAV     | .wav     | 500MB          |
-| FLAC    | .flac    | 500MB          |
-| M4A     | .m4a     | 500MB          |
-| OGG     | .ogg     | 500MB          |
-| WebM    | .webm    | 500MB          |
+| Format | Extension | Max Size |
+|--------|-----------|----------|
+| MP3    | .mp3      | 500MB    |
+| WAV    | .wav      | 500MB    |
+| FLAC   | .flac     | 500MB    |
+| M4A    | .m4a      | 500MB    |
+| OGG    | .ogg      | 500MB    |
+| WebM   | .webm     | 500MB    |
 
-## 🐛 Solução de Problemas
+## 🐛 Troubleshooting
 
-### Problemas Comuns
+### Common Issues
 
-**Erro: "Modelo não encontrado"**
-- O modelo será baixado automaticamente na primeira execução
-- Verifique sua conexão com a internet
+**Error: "Model not found"**
+- The model will be downloaded automatically on first run
+- Check your internet connection
 
-**Erro: "Formato de arquivo não suportado"**
-- Verifique se o arquivo está em um dos formatos suportados
-- Tente converter o arquivo para MP3 ou WAV
+**Error: "Unsupported file format"**
+- Check if the file is in one of the supported formats
+- Try converting the file to MP3 or WAV
 
-**Aplicação não abre no Linux**
-- Verifique se todas as dependências do sistema estão instaladas
-- Execute: `sudo apt install libwebkit2gtk-4.0-37`
+**Application won't open on Linux**
+- Check if all system dependencies are installed
+- Run: `sudo apt install libwebkit2gtk-4.0-37`
 
-### Logs de Debug
+### Debug Logs
 
-Os logs da aplicação ficam em:
+Application logs are located at:
 - **Linux/macOS**: `~/.echo-transcribe/logs/`
 - **Windows**: `%USERPROFILE%\\.echo-transcribe\\logs\\`
 
-## 🤝 Contribuindo
+## 🤝 Contributing
 
-Contribuições são muito bem-vindas! Por favor, leia nosso [Guia de Contribuição](CONTRIBUTING.md) para começar.
+Contributions are very welcome! Please read our [Contributing Guide](CONTRIBUTING.md) to get started.
 
-### Desenvolvimento Local
+### Local Development
 
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/amazing-feature`)
-3. Commit suas mudanças (`git commit -m 'Add some amazing feature'`)
-4. Push para a branch (`git push origin feature/amazing-feature`)
-5. Abra um Pull Request
+1. Fork the project
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## 📝 Roadmap
 
-- [x] **v0.2.0** ✅ **CONCLUÍDO**
-  - [x] Suporte a transcrição em lote
-  - [x] Detecção automática de idioma
-  - [x] Timestamps precisos por palavra
-  - [x] Exportação para múltiplos formatos (TXT, SRT, JSON)
-  - [x] Tela de configurações com persistência
-  - [x] Suporte a temas (claro/escuro)
-  - [x] Sistema de localização (EN/PT/ES)
+- [x] **v0.2.0** ✅ **COMPLETED**
+  - [x] Batch transcription support
+  - [x] Automatic language detection
+  - [x] Precise word-level timestamps
+  - [x] Export to multiple formats (TXT, SRT, JSON)
+  - [x] Settings screen with persistence
+  - [x] Theme support (light/dark)
+  - [x] Localization system (EN/PT/ES)
   
 - [ ] **v0.3.0**
   - [ ] Plugin system
-  - [ ] Suporte a mais modelos de IA
-  - [ ] Integração com serviços de nuvem (opcional)
-  - [ ] Melhorias na interface de timestamps
-  - [ ] Suporte a mais idiomas da comunidade
+  - [ ] Support for more AI models
+  - [ ] Cloud service integration (optional)
+  - [ ] Timestamp interface improvements
+  - [ ] Community language support
 
 - [ ] **v1.0.0**
-  - [ ] Interface para treinamento de modelos personalizados
-  - [ ] API REST completa
-  - [ ] Suporte a streaming de áudio
-  - [ ] Marketplace de plugins
+  - [ ] Custom model training interface
+  - [ ] Complete REST API
+  - [ ] Audio streaming support
+  - [ ] Plugin marketplace
 
-## 📄 Licença
+## 📄 License
 
-Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Agradecimentos
+## 🙏 Acknowledgments
 
-- [OpenAI](https://openai.com/) pelo modelo Whisper
-- [Tauri](https://tauri.app/) pela framework de desktop
-- [FastAPI](https://fastapi.tiangolo.com/) pelo framework backend
-- [shadcn/ui](https://ui.shadcn.com/) pelos componentes de UI
+- [OpenAI](https://openai.com/) for the Whisper model
+- [Tauri](https://tauri.app/) for the desktop framework
+- [FastAPI](https://fastapi.tiangolo.com/) for the backend framework
+- [shadcn/ui](https://ui.shadcn.com/) for UI components
 
-## 📞 Suporte
+## 📞 Support
 
-- 📧 Email: [seu-email@example.com](mailto:seu-email@example.com)
-- 🐛 Issues: [GitHub Issues](https://github.com/seu-usuario/echo-transcribe/issues)
-- 💬 Discussões: [GitHub Discussions](https://github.com/seu-usuario/echo-transcribe/discussions)
+- 📧 Email: [your-email@example.com](mailto:your-email@example.com)
+- 🐛 Issues: [GitHub Issues](https://github.com/your-username/echo-transcribe/issues)
+- 💬 Discussions: [GitHub Discussions](https://github.com/your-username/echo-transcribe/discussions)
 
 ---
 
-**EchoTranscribe** - Transformando áudio em texto com privacidade e qualidade. 🎙️✨
-
-
+**EchoTranscribe** - Transforming audio to text with privacy and quality. 🎙️✨
