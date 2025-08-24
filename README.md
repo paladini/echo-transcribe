@@ -2,7 +2,7 @@
 
 Uma aplicação de desktop open-source para transcrição de áudio usando IA local. Privado, seguro e eficiente.
 
-![EchoTranscribe Screenshot](docs/screenshot.png)
+<img width="995" height="929" alt="image" src="https://github.com/user-attachments/assets/e3399f9a-5f09-4eeb-9d7d-d3afdf50e7a2" />
 
 ## ✨ Características
 
