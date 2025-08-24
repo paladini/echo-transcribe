@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Save, Copy, Download, Edit3, Eye, FileText, Code, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useSettings } from '../contexts/SettingsContext';
 
 interface TranscriptionEditorProps {
   transcription: string;
@@ -23,6 +24,7 @@ export const TranscriptionEditor: React.FC<TranscriptionEditorProps> = ({
   const [wordCount, setWordCount] = useState(0);
   const [charCount, setCharCount] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { t } = useSettings();
 
   useEffect(() => {
     setText(transcription);
@@ -253,7 +255,7 @@ export const TranscriptionEditor: React.FC<TranscriptionEditorProps> = ({
           <div className="w-full min-h-64 p-4 border rounded-lg bg-muted/30 font-mono text-sm leading-relaxed whitespace-pre-wrap">
             {text || (
               <span className="text-muted-foreground italic">
-                Nenhuma transcrição disponível
+                {t('noTranscriptionAvailable')}
               </span>
             )}
           </div>

@@ -10,6 +10,25 @@ Uma aplicação de desktop open-source para transcrição de áudio usando IA lo
 - 🤖 **IA Avançada**: Usa modelos Whisper para transcrição de alta qualidade
 - 🎨 **Interface Moderna**: Design clean e intuitivo com suporte a tema escuro
 - 📁 **Múltiplos Formatos**: Suporte para MP3, WAV, FLAC, M4A, OGG e WebM
+- 🔄 **Transcrição em Lote**: Processe múltiplos arquivos simultaneamente
+- 🌍 **Detecção Automática**: Identifica automaticamente o idioma do áudio
+- ⏱️ **Timestamps Precisos**: Timestamps por palavra para navegação detalhada
+- 💾 **Exportação Flexível**: Exporte para TXT, SRT ou JSON
+- ⚙️ **Configurações Persistentes**: Tema escuro/claro e idioma salvos entre sessões
+- � **Multilíngue**: Interface em inglês, português e espanhol (expansível)
+- ⚡ **Performance**: Otimizado para velocidade e eficiência
+- 🖥️ **Cross-Platform**: Funciona no Windows, macOS e Linux🎙️
+
+Uma aplicação de desktop open-source para transcrição de áudio usando IA local. Privado, seguro e eficiente.
+
+![EchoTranscribe Screenshot](docs/screenshot.png)
+
+## ✨ Características
+
+- 🔒 **Completamente Local**: Seus arquivos de áudio nunca saem do seu computador
+- 🤖 **IA Avançada**: Usa modelos Whisper para transcrição de alta qualidade
+- 🎨 **Interface Moderna**: Design clean e intuitivo com suporte a tema escuro
+- 📁 **Múltiplos Formatos**: Suporte para MP3, WAV, FLAC, M4A, OGG e WebM
 - � **Transcrição em Lote**: Processe múltiplos arquivos simultaneamente
 - 🌍 **Detecção Automática**: Identifica automaticamente o idioma do áudio
 - ⏱️ **Timestamps Precisos**: Timestamps por palavra para navegação detalhada
@@ -98,6 +117,10 @@ Baixe a versão mais recente dos [Releases](https://github.com/seu-usuario/echo-
    - Exporte individualmente ou em lote
    - Formatos disponíveis: TXT, SRT, JSON
 
+7. **Configure a aplicação**
+   - Acesse as configurações para personalizar tema e idioma
+   - Suas preferências são salvas automaticamente para próximas sessões
+
 ## 🛠️ Tecnologias
 
 - **Frontend**: React + TypeScript + Tailwind CSS
@@ -178,20 +201,27 @@ Contribuições são muito bem-vindas! Por favor, leia nosso [Guia de Contribui�
 
 ## 📝 Roadmap
 
-- [x] **v0.2.0**
+- [x] **v0.2.0** ✅ **CONCLUÍDO**
   - [x] Suporte a transcrição em lote
   - [x] Detecção automática de idioma
   - [x] Timestamps precisos por palavra
+  - [x] Exportação para múltiplos formatos (TXT, SRT, JSON)
+  - [x] Tela de configurações com persistência
+  - [x] Suporte a temas (claro/escuro)
+  - [x] Sistema de localização (EN/PT/ES)
   
 - [ ] **v0.3.0**
   - [ ] Plugin system
   - [ ] Suporte a mais modelos de IA
   - [ ] Integração com serviços de nuvem (opcional)
+  - [ ] Melhorias na interface de timestamps
+  - [ ] Suporte a mais idiomas da comunidade
 
 - [ ] **v1.0.0**
   - [ ] Interface para treinamento de modelos personalizados
   - [ ] API REST completa
   - [ ] Suporte a streaming de áudio
+  - [ ] Marketplace de plugins
 
 ## 📄 Licença
 

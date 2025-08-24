@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { Upload, FileAudio, X, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSettings } from '../contexts/SettingsContext';
 
 interface FileDropZoneProps {
   onFilesSelect: (files: File[]) => void;
@@ -34,6 +35,7 @@ export const FileDropZone: React.FC<FileDropZoneProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { t } = useSettings();
 
   const validateFile = useCallback((file: File): string | null => {
     // Verificar tipo de arquivo
@@ -208,17 +210,17 @@ export const FileDropZone: React.FC<FileDropZoneProps> = ({
                 <p className="text-lg font-medium">
                   {isDragOver 
                     ? "Solte os arquivos aqui" 
-                    : "Arraste arquivos ou clique para selecionar"
+                    : t('dragDropFiles')
                   }
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Formatos suportados: MP3, WAV, FLAC, M4A, OGG, WebM
+                  {t('supportedFormats')}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Tamanho máximo: {(maxSize / (1024 * 1024)).toFixed(0)}MB por arquivo
+                  {t('fileSize')}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Máximo de {MAX_FILES} arquivos por vez
+                  {t('maxFiles')}
                 </p>
               </div>
             </>

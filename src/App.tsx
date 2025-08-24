@@ -1,10 +1,12 @@
 import React, { useState, useCallback } from 'react';
-import { Mic, Download, FileText, Settings, Moon, Sun, Copy, Check } from 'lucide-react';
+import { Mic, Download, FileText, Settings as SettingsIcon, Copy, Check } from 'lucide-react';
 import { FileDropZone } from './components/FileDropZone';
 import { ModelSelector } from './components/ModelSelector';
 import { ProgressBar } from './components/ProgressBar';
 import { Button } from './components/ui/button';
 import { DetailedAnalysis } from './components/DetailedAnalysis';
+import { Settings } from './components/Settings';
+import { SettingsProvider, useSettings } from './contexts/SettingsContext';
 import { cn } from './lib/utils';
 
 interface ModelInfo {
@@ -32,7 +34,19 @@ interface BatchTranscriptionResult {
 
 const API_BASE_URL = 'http://127.0.0.1:8000';
 
-const App: React.FC = () => {
+// Componente principal que usa as configurações
+function AppContent() {
+  // Usar try-catch para capturar erros do useSettings
+  let t: (key: string) => string;
+  try {
+    const { t: translateFn } = useSettings();
+    t = translateFn;
+  } catch (error) {
+    console.error('Error accessing settings context:', error);
+    // Fallback para inglês
+    t = (key: string) => key;
+  }
+
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedModel, setSelectedModel] = useState('base');
   const [batchResults, setBatchResults] = useState<BatchTranscriptionResult[]>([]);
@@ -43,67 +57,34 @@ const App: React.FC = () => {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [downloadStatus, setDownloadStatus] = useState<{[key: string]: 'downloading' | 'success' | 'error'}>({});
   const [copyWithTimestamps, setCopyWithTimestamps] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') === 'dark' || 
-             (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    }
-    return false;
-  });
+  const [currentView, setCurrentView] = useState<'main' | 'settings'>('main');
 
   const [models] = useState<ModelInfo[]>([
     {
       name: 'tiny',
       size: '39 MB',
-      description: 'Modelo pequeno e rápido, menor precisão',
+      description: t('modelTiny'),
       available: false
     },
     {
       name: 'base',
       size: '74 MB',
-      description: 'Modelo balanceado entre velocidade e precisão',
+      description: t('modelBase'),
       available: true
     },
     {
       name: 'small',
       size: '244 MB',
-      description: 'Modelo com boa precisão, velocidade média',
+      description: t('modelSmall'),
       available: false
     },
     {
       name: 'medium',
       size: '769 MB',
-      description: 'Modelo com alta precisão, mais lento',
+      description: t('modelMedium'),
       available: false
     }
   ]);
-
-  // Toggle dark mode
-  const toggleDarkMode = useCallback(() => {
-    setIsDarkMode(prev => {
-      const newValue = !prev;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('theme', newValue ? 'dark' : 'light');
-        if (newValue) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-      }
-      return newValue;
-    });
-  }, []);
-
-  // Aplicar dark mode no carregamento
-  React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      if (isDarkMode) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    }
-  }, [isDarkMode]);
 
   const handleFilesSelect = useCallback((files: File[]) => {
     setSelectedFiles(files);
@@ -467,6 +448,11 @@ const App: React.FC = () => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')},${millisecs.toString().padStart(3, '0')}`;
   };
 
+  // Renderizar tela de configurações (DEPOIS de todos os hooks)
+  if (currentView === 'settings') {
+    return <Settings onBack={() => setCurrentView('main')} />;
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
       {/* Header */}
@@ -479,10 +465,10 @@ const App: React.FC = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                  EchoTranscribe
+                  {t('appTitle')}
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  Transcrição de áudio com IA local
+                  {t('appSubtitle')}
                 </p>
               </div>
             </div>
@@ -491,17 +477,10 @@ const App: React.FC = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={toggleDarkMode}
+                onClick={() => setCurrentView('settings')}
                 className="w-9 h-9"
               >
-                {isDarkMode ? (
-                  <Sun className="w-4 h-4" />
-                ) : (
-                  <Moon className="w-4 h-4" />
-                )}
-              </Button>
-              <Button variant="ghost" size="icon" className="w-9 h-9">
-                <Settings className="w-4 h-4" />
+                <SettingsIcon className="w-4 h-4" />
               </Button>
             </div>
           </div>
@@ -516,7 +495,7 @@ const App: React.FC = () => {
             <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-primary" />
-                Upload de Arquivo
+                {t('selectFiles')}
               </h2>
               <FileDropZone onFilesSelect={handleFilesSelect} />
             </div>
@@ -542,12 +521,12 @@ const App: React.FC = () => {
                   {isTranscribing ? (
                     <>
                       <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-                      Transcrevendo arquivo {currentFileIndex + 1} de {selectedFiles.length}...
+                      {t('statusProcessing')}
                     </>
                   ) : (
                     <>
                       <Mic className="w-4 h-4 mr-2" />
-                      Iniciar Transcrição ({selectedFiles.length} arquivo{selectedFiles.length > 1 ? 's' : ''})
+                      {t('startTranscription')} ({selectedFiles.length} {selectedFiles.length > 1 ? t('files') : t('file')})
                     </>
                   )}
                 </Button>
@@ -560,7 +539,7 @@ const App: React.FC = () => {
             {/* Progress */}
             {isTranscribing && (
               <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
-                <h3 className="text-lg font-semibold mb-4">Progresso da Transcrição</h3>
+                <h3 className="text-lg font-semibold mb-4">{t('transcriptionProgress')}</h3>
                 <ProgressBar 
                   progress={progress} 
                   status={progress === 100 ? 'completed' : 'processing'}
@@ -579,7 +558,7 @@ const App: React.FC = () => {
             {/* Error */}
             {error && (
               <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-destructive mb-2">Erro</h3>
+                <h3 className="text-lg font-semibold text-destructive mb-2">{t('statusError')}</h3>
                 <p className="text-destructive">{error}</p>
               </div>
             )}
@@ -588,9 +567,9 @@ const App: React.FC = () => {
             {batchResults.length > 0 && (
               <div className="bg-card border border-border rounded-lg shadow-sm">
                 <div className="p-6 border-b border-border">
-                  <h3 className="text-lg font-semibold">Resultados da Transcrição</h3>
+                  <h3 className="text-lg font-semibold">{t('transcriptionResults')}</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {batchResults.filter(r => r.status === 'completed').length} de {batchResults.length} arquivo(s) processado(s)
+                    {batchResults.filter(r => r.status === 'completed').length} {t('of')} {batchResults.length} {batchResults.length > 1 ? t('files') : t('file')} processado{batchResults.length > 1 ? 's' : ''}
                   </p>
                 </div>
                 
@@ -607,10 +586,10 @@ const App: React.FC = () => {
                             result.status === 'pending' && "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
                             result.status === 'error' && "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
                           )}>
-                            {result.status === 'completed' && 'Concluído'}
-                            {result.status === 'processing' && 'Processando...'}
-                            {result.status === 'pending' && 'Pendente'}
-                            {result.status === 'error' && 'Erro'}
+                            {result.status === 'completed' && t('statusCompleted')}
+                            {result.status === 'processing' && t('statusProcessing')}
+                            {result.status === 'pending' && t('statusPending')}
+                            {result.status === 'error' && t('statusError')}
                           </span>
                         </div>
                         
@@ -747,10 +726,9 @@ const App: React.FC = () => {
                 <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                   <Mic className="w-8 h-8 text-muted-foreground" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Pronto para transcrever</h3>
+                <h3 className="text-xl font-semibold mb-2">{t('readyToTranscribe')}</h3>
                 <p className="text-muted-foreground max-w-md mx-auto">
-                  Selecione um arquivo de áudio, escolha um modelo de IA e clique em "Iniciar Transcrição" 
-                  para começar.
+                  {t('readyDescription')}
                 </p>
               </div>
             )}
@@ -762,12 +740,21 @@ const App: React.FC = () => {
       <footer className="border-t border-border/40 mt-16">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <p>EchoTranscribe v0.2.0 - Transcrição de áudio com IA local</p>
-            <p>Feito com ❤️ usando Tauri e React</p>
+            <p>EchoTranscribe v0.2.0 - {t('footerText')}</p>
+            <p>{t('footerMade')}</p>
           </div>
         </div>
       </footer>
     </div>
+  );
+}
+
+// Componente App principal com Provider
+const App: React.FC = () => {
+  return (
+    <SettingsProvider>
+      <AppContent />
+    </SettingsProvider>
   );
 };
 

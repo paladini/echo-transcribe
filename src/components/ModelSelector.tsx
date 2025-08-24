@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Settings, Download, Cpu, HardDrive, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useSettings } from '../contexts/SettingsContext';
 
 interface ModelInfo {
   name: string;
@@ -28,6 +29,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   className
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { t } = useSettings();
 
   const selectedModelInfo = models.find(m => m.name === selectedModel);
 
@@ -37,7 +39,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Cpu className="w-5 h-5 text-primary" />
-          <h3 className="text-lg font-semibold">Modelo de IA</h3>
+          <h3 className="text-lg font-semibold">{t('aiModel')}</h3>
         </div>
         <Button
           variant="ghost"
@@ -46,7 +48,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
           className="flex items-center gap-2"
         >
           <Settings className="w-4 h-4" />
-          {isExpanded ? 'Ocultar' : 'Configurar'}
+          {isExpanded ? t('hide') : t('configure')}
         </Button>
       </div>
 
@@ -62,11 +64,11 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                 </span>
                 {selectedModelInfo.available ? (
                   <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 px-2 py-1 rounded-full">
-                    Disponível
+                    {t('available')}
                   </span>
                 ) : (
                   <span className="text-xs bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300 px-2 py-1 rounded-full">
-                    Não baixado
+                    {t('notDownloaded')}
                   </span>
                 )}
               </div>
@@ -76,14 +78,14 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
             </div>
             
             {!selectedModelInfo.available && onDownloadModel && (
-              <Button
+                <Button
                 size="sm"
                 onClick={() => onDownloadModel(selectedModelInfo.name)}
                 disabled={isLoading}
                 className="flex items-center gap-2"
               >
                 <Download className="w-4 h-4" />
-                Baixar
+                {t('download')}
               </Button>
             )}
           </div>
@@ -116,14 +118,14 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                         <div className="flex items-center gap-1">
                           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                           <span className="text-xs text-green-600 dark:text-green-400">
-                            Disponível
+                            {t('available')}
                           </span>
                         </div>
                       ) : (
                         <div className="flex items-center gap-1">
                           <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                           <span className="text-xs text-orange-600 dark:text-orange-400">
-                            Requer download
+                            {t('downloadRequired')}
                           </span>
                         </div>
                       )}
@@ -135,7 +137,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
 
                   <div className="flex items-center gap-2 ml-4">
                     {!model.available && onDownloadModel && (
-                      <Button
+                        <Button
                         size="sm"
                         variant="outline"
                         onClick={(e) => {
@@ -146,7 +148,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                         className="flex items-center gap-2"
                       >
                         <Download className="w-4 h-4" />
-                        Baixar
+                        {t('download')}
                       </Button>
                     )}
                     
@@ -167,12 +169,12 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
               <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
               <div className="space-y-1">
                 <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                  Dicas de Performance
+                  {t('performanceTips')}
                 </p>
                 <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-1">
-                  <li>• <strong>Tiny/Base:</strong> Rápido, ideal para testes</li>
-                  <li>• <strong>Small:</strong> Melhor qualidade, velocidade média</li>
-                  <li>• <strong>Medium:</strong> Alta qualidade, mais lento</li>
+                  <li>• <strong>Tiny/Base:</strong> {t('modelStatusTiny')}</li>
+                  <li>• <strong>Small:</strong> {t('modelStatusSmall')}</li>
+                  <li>• <strong>Medium:</strong> {t('modelStatusMedium')}</li>
                 </ul>
               </div>
             </div>
@@ -182,11 +184,11 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
           <div className="flex items-center gap-4 text-xs text-muted-foreground p-3 bg-muted/30 rounded-lg">
             <div className="flex items-center gap-2">
               <HardDrive className="w-4 h-4" />
-              <span>Modelos locais: {models.filter(m => m.available).length}/{models.length}</span>
+              <span>{t('localModels')}: {models.filter(m => m.available).length}/{models.length}</span>
             </div>
             <div className="flex items-center gap-2">
               <Cpu className="w-4 h-4" />
-              <span>Status: {isLoading ? 'Processando...' : 'Pronto'}</span>
+              <span>{t('status')}: {isLoading ? t('processing') : t('ready')}</span>
             </div>
           </div>
         </div>
