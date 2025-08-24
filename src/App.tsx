@@ -41,6 +41,8 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentFileIndex, setCurrentFileIndex] = useState(0);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [downloadStatus, setDownloadStatus] = useState<{[key: string]: 'downloading' | 'success' | 'error'}>({});
+  const [copyWithTimestamps, setCopyWithTimestamps] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('theme') === 'dark' || 
@@ -218,15 +220,42 @@ const App: React.FC = () => {
     }
   }, [selectedFiles, selectedModel]);
 
-  const copyToClipboard = useCallback(async (text: string, index: number) => {
+  const copyToClipboard = useCallback(async (result: BatchTranscriptionResult, index: number, withTimestamps: boolean = false) => {
     try {
+      let textToCopy = result.text;
+      
+      // Se solicitado timestamps e eles existem, formatar como SRT
+      if (withTimestamps && result.word_timestamps && result.word_timestamps.length > 0) {
+        let srtContent = '';
+        let segmentIndex = 1;
+        let currentSubtitle = '';
+        let startTime = 0;
+        let endTime = 0;
+        const wordsPerSegment = 8; // Palavras por linha de legenda
+        
+        for (let i = 0; i < result.word_timestamps.length; i += wordsPerSegment) {
+          const segment = result.word_timestamps.slice(i, i + wordsPerSegment);
+          startTime = segment[0].start;
+          endTime = segment[segment.length - 1].end;
+          currentSubtitle = segment.map(w => w.word).join(' ');
+          
+          const startSRT = formatTimeForSRT(startTime);
+          const endSRT = formatTimeForSRT(endTime);
+          
+          srtContent += `${segmentIndex}\n${startSRT} --> ${endSRT}\n${currentSubtitle}\n\n`;
+          segmentIndex++;
+        }
+        
+        textToCopy = srtContent.trim();
+      }
+      
       if (navigator.clipboard && window.isSecureContext) {
         // Usar a API moderna de clipboard
-        await navigator.clipboard.writeText(text);
+        await navigator.clipboard.writeText(textToCopy);
       } else {
         // Fallback para navegadores mais antigos
         const textArea = document.createElement('textarea');
-        textArea.value = text;
+        textArea.value = textToCopy;
         textArea.style.position = 'fixed';
         textArea.style.left = '-999999px';
         textArea.style.top = '-999999px';
@@ -241,7 +270,7 @@ const App: React.FC = () => {
       setCopiedIndex(index);
       setTimeout(() => setCopiedIndex(null), 2000);
       
-      console.log('Texto copiado para a área de transferência');
+      console.log('Texto copiado para a área de transferência', withTimestamps ? 'no formato SRT' : '');
     } catch (error) {
       console.error('Erro ao copiar texto:', error);
       alert('Erro ao copiar texto. Tente selecionar e copiar manualmente.');
@@ -249,7 +278,11 @@ const App: React.FC = () => {
   }, []);
 
   const exportSingleResult = useCallback(async (result: BatchTranscriptionResult, format: 'txt' | 'srt' | 'json') => {
+    const downloadKey = `${result.filename}-${format}`;
+    
     try {
+      setDownloadStatus(prev => ({ ...prev, [downloadKey]: 'downloading' }));
+      
       let content: string;
       let filename: string;
       let mimeType: string;
@@ -299,6 +332,7 @@ const App: React.FC = () => {
 
       // Verificar se o conteúdo não está vazio
       if (!content || content.trim().length === 0) {
+        setDownloadStatus(prev => ({ ...prev, [downloadKey]: 'error' }));
         alert('Erro: Conteúdo vazio para exportar. Verifique se a transcrição foi concluída.');
         return;
       }
@@ -308,7 +342,48 @@ const App: React.FC = () => {
       // Criar e baixar o arquivo
       const blob = new Blob([content], { type: mimeType + ';charset=utf-8' });
       
-      // Tentar método mais simples primeiro
+      // Tentar download usando API moderna do navegador
+      if ('showSaveFilePicker' in window) {
+        try {
+          const fileHandle = await (window as any).showSaveFilePicker({
+            suggestedName: filename,
+            types: [{
+              description: format.toUpperCase() + ' files',
+              accept: { [mimeType]: ['.' + format] }
+            }]
+          });
+          
+          const writable = await fileHandle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          
+          setDownloadStatus(prev => ({ ...prev, [downloadKey]: 'success' }));
+          console.log('Arquivo salvo com sucesso via File System Access API:', filename);
+          
+          // Remover status após 3 segundos
+          setTimeout(() => {
+            setDownloadStatus(prev => {
+              const newStatus = { ...prev };
+              delete newStatus[downloadKey];
+              return newStatus;
+            });
+          }, 3000);
+          
+          return;
+        } catch (fsError: any) {
+          if (fsError.name === 'AbortError') {
+            setDownloadStatus(prev => {
+              const newStatus = { ...prev };
+              delete newStatus[downloadKey];
+              return newStatus;
+            });
+            return; // Usuário cancelou
+          }
+          console.warn('File System Access API falhou, tentando método fallback:', fsError);
+        }
+      }
+      
+      // Método fallback para navegadores mais antigos ou Tauri
       try {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -316,10 +391,7 @@ const App: React.FC = () => {
         a.download = filename;
         a.style.display = 'none';
         
-        // Adicionar ao DOM temporariamente
         document.body.appendChild(a);
-        
-        // Simular clique
         a.click();
         
         // Limpar após delay
@@ -332,15 +404,23 @@ const App: React.FC = () => {
           }
         }, 1000);
         
-        console.log('Download iniciado com sucesso:', filename);
+        setDownloadStatus(prev => ({ ...prev, [downloadKey]: 'success' }));
+        console.log('Download iniciado com sucesso via método fallback:', filename);
         
-        // Mostrar feedback de sucesso
-        alert(`Download iniciado: ${filename}`);
+        // Remover status após 3 segundos
+        setTimeout(() => {
+          setDownloadStatus(prev => {
+            const newStatus = { ...prev };
+            delete newStatus[downloadKey];
+            return newStatus;
+          });
+        }, 3000);
         
-      } catch (error) {
-        console.error('Erro no download:', error);
+      } catch (downloadError) {
+        console.error('Erro no download fallback:', downloadError);
+        setDownloadStatus(prev => ({ ...prev, [downloadKey]: 'error' }));
         
-        // Tentar copiar para clipboard como fallback
+        // Tentar copiar para clipboard como último recurso
         try {
           await navigator.clipboard.writeText(content);
           alert(`Erro no download. O conteúdo foi copiado para a área de transferência.\n\nVocê pode colar em um editor de texto e salvar como "${filename}"`);
@@ -348,11 +428,30 @@ const App: React.FC = () => {
           console.error('Erro no clipboard também:', clipboardError);
           alert(`Erro no download e na cópia. Copie o texto manualmente da interface e salve como "${filename}"`);
         }
+        
+        // Remover status de erro após 5 segundos
+        setTimeout(() => {
+          setDownloadStatus(prev => {
+            const newStatus = { ...prev };
+            delete newStatus[downloadKey];
+            return newStatus;
+          });
+        }, 5000);
       }
       
     } catch (error) {
       console.error('Erro ao exportar arquivo:', error);
+      setDownloadStatus(prev => ({ ...prev, [downloadKey]: 'error' }));
       alert('Erro ao exportar arquivo: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
+      
+      // Remover status de erro após 5 segundos
+      setTimeout(() => {
+        setDownloadStatus(prev => {
+          const newStatus = { ...prev };
+          delete newStatus[downloadKey];
+          return newStatus;
+        });
+      }, 5000);
     }
   }, []);
 
@@ -516,47 +615,97 @@ const App: React.FC = () => {
                         </div>
                         
                         {result.status === 'completed' && (
-                          <div className="flex items-center flex-wrap gap-1 flex-shrink-0">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => copyToClipboard(result.text, index)}
-                              title="Copiar texto para área de transferência"
-                            >
-                              {copiedIndex === index ? (
-                                <Check className="w-4 h-4 mr-1 text-green-600" />
-                              ) : (
-                                <Copy className="w-4 h-4 mr-1" />
-                              )}
-                              {copiedIndex === index ? 'Copiado!' : 'Copiar'}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => exportSingleResult(result, 'txt')}
-                              title="Baixar como TXT"
-                            >
-                              <Download className="w-4 h-4 mr-1" />
-                              TXT
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => exportSingleResult(result, 'srt')}
-                              title="Baixar como SRT (legendas)"
-                            >
-                              <Download className="w-4 h-4 mr-1" />
-                              SRT
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => exportSingleResult(result, 'json')}
-                              title="Baixar como JSON (dados completos)"
-                            >
-                              <Download className="w-4 h-4 mr-1" />
-                              JSON
-                            </Button>
+                          <div className="space-y-2">
+                            {/* Checkbox para copiar como SRT */}
+                            <div className="flex items-center space-x-2 text-xs">
+                              <input
+                                type="checkbox"
+                                id={`timestamps-${index}`}
+                                checked={copyWithTimestamps}
+                                onChange={(e) => setCopyWithTimestamps(e.target.checked)}
+                                className="rounded border-gray-300 text-primary focus:ring-primary"
+                              />
+                              <label htmlFor={`timestamps-${index}`} className="text-muted-foreground">
+                                Copiar como SRT (legendas com tempo)
+                              </label>
+                            </div>
+                            
+                            {/* Botões de ação */}
+                            <div className="flex items-center flex-wrap gap-1 flex-shrink-0">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => copyToClipboard(result, index, copyWithTimestamps)}
+                                title={copyWithTimestamps ? "Copiar no formato SRT (legendas)" : "Copiar texto para área de transferência"}
+                              >
+                                {copiedIndex === index ? (
+                                  <Check className="w-4 h-4 mr-1 text-green-600" />
+                                ) : (
+                                  <Copy className="w-4 h-4 mr-1" />
+                                )}
+                                {copiedIndex === index ? 'Copiado!' : (copyWithTimestamps ? 'Copiar SRT' : 'Copiar')}
+                              </Button>
+                              
+                              {/* Botão TXT */}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => exportSingleResult(result, 'txt')}
+                                title="Baixar como TXT"
+                                disabled={downloadStatus[`${result.filename}-txt`] === 'downloading'}
+                              >
+                                {downloadStatus[`${result.filename}-txt`] === 'downloading' && (
+                                  <div className="w-4 h-4 mr-1 animate-spin rounded-full border-2 border-gray-300 border-t-primary"></div>
+                                )}
+                                {downloadStatus[`${result.filename}-txt`] === 'success' && (
+                                  <Check className="w-4 h-4 mr-1 text-green-600" />
+                                )}
+                                {!downloadStatus[`${result.filename}-txt`] && (
+                                  <Download className="w-4 h-4 mr-1" />
+                                )}
+                                TXT
+                              </Button>
+                              
+                              {/* Botão SRT */}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => exportSingleResult(result, 'srt')}
+                                title="Baixar como SRT (legendas)"
+                                disabled={downloadStatus[`${result.filename}-srt`] === 'downloading'}
+                              >
+                                {downloadStatus[`${result.filename}-srt`] === 'downloading' && (
+                                  <div className="w-4 h-4 mr-1 animate-spin rounded-full border-2 border-gray-300 border-t-primary"></div>
+                                )}
+                                {downloadStatus[`${result.filename}-srt`] === 'success' && (
+                                  <Check className="w-4 h-4 mr-1 text-green-600" />
+                                )}
+                                {!downloadStatus[`${result.filename}-srt`] && (
+                                  <Download className="w-4 h-4 mr-1" />
+                                )}
+                                SRT
+                              </Button>
+                              
+                              {/* Botão JSON */}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => exportSingleResult(result, 'json')}
+                                title="Baixar como JSON (dados completos)"
+                                disabled={downloadStatus[`${result.filename}-json`] === 'downloading'}
+                              >
+                                {downloadStatus[`${result.filename}-json`] === 'downloading' && (
+                                  <div className="w-4 h-4 mr-1 animate-spin rounded-full border-2 border-gray-300 border-t-primary"></div>
+                                )}
+                                {downloadStatus[`${result.filename}-json`] === 'success' && (
+                                  <Check className="w-4 h-4 mr-1 text-green-600" />
+                                )}
+                                {!downloadStatus[`${result.filename}-json`] && (
+                                  <Download className="w-4 h-4 mr-1" />
+                                )}
+                                JSON
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </div>
