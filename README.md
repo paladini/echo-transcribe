@@ -10,7 +10,10 @@ Uma aplicação de desktop open-source para transcrição de áudio usando IA lo
 - 🤖 **IA Avançada**: Usa modelos Whisper para transcrição de alta qualidade
 - 🎨 **Interface Moderna**: Design clean e intuitivo com suporte a tema escuro
 - 📁 **Múltiplos Formatos**: Suporte para MP3, WAV, FLAC, M4A, OGG e WebM
-- 💾 **Exportação Flexível**: Exporte para TXT, SRT ou JSON
+- � **Transcrição em Lote**: Processe múltiplos arquivos simultaneamente
+- 🌍 **Detecção Automática**: Identifica automaticamente o idioma do áudio
+- ⏱️ **Timestamps Precisos**: Timestamps por palavra para navegação detalhada
+- �💾 **Exportação Flexível**: Exporte para TXT, SRT ou JSON
 - ⚡ **Performance**: Otimizado para velocidade e eficiência
 - 🌐 **Cross-Platform**: Funciona no Windows, macOS e Linux
 
@@ -68,22 +71,32 @@ Baixe a versão mais recente dos [Releases](https://github.com/seu-usuario/echo-
 
 ## 🎯 Como Usar
 
-1. **Selecione um arquivo de áudio**
-   - Arraste e solte um arquivo na área indicada
-   - Ou clique para selecionar um arquivo
+1. **Selecione arquivo(s) de áudio**
+   - Arraste e solte um ou múltiplos arquivos na área indicada
+   - Ou clique para selecionar arquivos (máximo 10 por vez)
 
 2. **Escolha o modelo de IA**
    - **Tiny/Base**: Rápido, ideal para testes
    - **Small**: Melhor qualidade, velocidade média
    - **Medium**: Alta qualidade, mais lento
 
-3. **Inicie a transcrição**
+3. **Configure as opções**
+   - Deixe a detecção automática de idioma habilitada (recomendado)
+   - Ou especifique manualmente o idioma do áudio
+
+4. **Inicie a transcrição**
    - Clique em "Iniciar Transcrição"
    - Acompanhe o progresso em tempo real
+   - Para lotes, veja o progresso de cada arquivo
 
-4. **Edite e exporte**
-   - Edite o texto transcrito se necessário
-   - Exporte para TXT, SRT ou JSON
+5. **Visualize e edite os resultados**
+   - Veja o texto transcrito para cada arquivo
+   - Navegue pelos timestamps de cada palavra
+   - Edite o texto se necessário
+
+6. **Exporte os resultados**
+   - Exporte individualmente ou em lote
+   - Formatos disponíveis: TXT, SRT, JSON
 
 ## 🛠️ Tecnologias
 
@@ -113,7 +126,7 @@ python main.py       # Iniciar servidor backend standalone
 
 ### Modelos de IA
 
-O EchoTranscribe baixa automaticamente os modelos de IA conforme necessário. Os modelos ficam armazenados em:
+O AudioScribe baixa automaticamente os modelos de IA conforme necessário. Os modelos ficam armazenados em:
 
 - **Linux/macOS**: `~/.echo-transcribe/models/`
 - **Windows**: `%USERPROFILE%\\.echo-transcribe\\models\\`
@@ -165,10 +178,10 @@ Contribuições são muito bem-vindas! Por favor, leia nosso [Guia de Contribui�
 
 ## 📝 Roadmap
 
-- [ ] **v0.2.0**
-  - [ ] Suporte a transcrição em lote
-  - [ ] Detecção automática de idioma
-  - [ ] Timestamps precisos por palavra
+- [x] **v0.2.0**
+  - [x] Suporte a transcrição em lote
+  - [x] Detecção automática de idioma
+  - [x] Timestamps precisos por palavra
   
 - [ ] **v0.3.0**
   - [ ] Plugin system

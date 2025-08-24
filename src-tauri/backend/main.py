@@ -41,6 +41,8 @@ class TranscriptionResponse(BaseModel):
     text: str
     confidence: Optional[float] = None
     processing_time: Optional[float] = None
+    detected_language: Optional[str] = None
+    word_timestamps: Optional[List[dict]] = None
 
 class ModelInfo(BaseModel):
     name: str
@@ -48,10 +50,16 @@ class ModelInfo(BaseModel):
     description: str
     available: bool
 
-class ProgressUpdate(BaseModel):
-    progress: float
-    status: str
-    message: Optional[str] = None
+class BatchTranscriptionResponse(BaseModel):
+    results: List[dict]
+    total_files: int
+    successful: int
+    failed: int
+
+class BatchTranscriptionRequest(BaseModel):
+    files: List[str]  # Lista de nomes de arquivos temporários
+    model: str
+    language: Optional[str] = None
 
 # Variáveis globais
 MODELS_DIR = Path.home() / ".echo-transcribe" / "models"
@@ -159,7 +167,8 @@ async def transcribe_audio(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     model: str = "base",
-    language: Optional[str] = None
+    language: Optional[str] = None,
+    auto_detect_language: bool = True
 ):
     """
     Transcreve um arquivo de áudio
@@ -168,6 +177,7 @@ async def transcribe_audio(
         file: Arquivo de áudio (MP3, WAV, FLAC, M4A)
         model: Nome do modelo a ser usado (tiny, base, small, medium)
         language: Código do idioma (opcional, auto-detecta se não especificado)
+        auto_detect_language: Se deve detectar automaticamente o idioma
     """
     
     # Validar formato do arquivo
@@ -212,18 +222,50 @@ async def transcribe_audio(
         logger.info(f"Iniciando transcrição com modelo {model}")
         start_time = asyncio.get_event_loop().time()
         
+        # Se auto_detect_language for True e language não foi especificado, detectar idioma
+        detected_language = None
+        if auto_detect_language and not language:
+            logger.info("Detectando idioma automaticamente...")
+            # Usar apenas os primeiros 30 segundos para detecção de idioma
+            segments, info = whisper_model.transcribe(
+                temp_file.name,
+                language=None,  # Deixar o modelo detectar
+                beam_size=1,    # Usar beam size menor para ser mais rápido
+                best_of=1,
+                temperature=0.0,
+                condition_on_previous_text=False,
+                word_timestamps=False
+            )
+            detected_language = info.language
+            logger.info(f"Idioma detectado: {detected_language}")
+        
+        # Transcrição completa com idioma detectado ou especificado
+        final_language = language or detected_language
         segments, info = whisper_model.transcribe(
             temp_file.name,
-            language=language,
+            language=final_language,
             beam_size=5,
             best_of=5,
-            temperature=0.0
+            temperature=0.0,
+            word_timestamps=True,  # Habilitar timestamps por palavra
+            condition_on_previous_text=False
         )
         
-        # Concatenar segmentos
+        # Concatenar segmentos e coletar timestamps
         transcription_text = ""
+        word_timestamps = []
+        
         for segment in segments:
             transcription_text += segment.text + " "
+            # Coletar timestamps de palavras se disponíveis
+            if hasattr(segment, 'words') and segment.words:
+                for word in segment.words:
+                    word_timestamps.append({
+                        "word": word.word,
+                        "start": word.start,
+                        "end": word.end,
+                        "probability": getattr(word, 'probability', None)
+                    })
         
         end_time = asyncio.get_event_loop().time()
         processing_time = end_time - start_time
@@ -236,7 +278,9 @@ async def transcribe_audio(
         return TranscriptionResponse(
             text=transcription_text.strip(),
             confidence=None,  # faster-whisper não fornece confidence score diretamente
-            processing_time=processing_time
+            processing_time=processing_time,
+            detected_language=detected_language,
+            word_timestamps=word_timestamps
         )
         
     except Exception as e:
@@ -249,6 +293,148 @@ async def transcribe_audio(
             status_code=500,
             detail=f"Erro durante transcrição: {str(e)}"
         )
+
+@app.post("/transcribe-batch", response_model=BatchTranscriptionResponse)
+async def transcribe_batch(
+    background_tasks: BackgroundTasks,
+    files: List[UploadFile] = File(...),
+    model: str = "base",
+    language: Optional[str] = None,
+    auto_detect_language: bool = True
+):
+    """
+    Transcreve múltiplos arquivos de áudio em lote
+    
+    Args:
+        files: Lista de arquivos de áudio
+        model: Nome do modelo a ser usado
+        language: Código do idioma (opcional)
+        auto_detect_language: Se deve detectar automaticamente o idioma
+    """
+    
+    if len(files) > 10:  # Limitar a 10 arquivos por vez
+        raise HTTPException(
+            status_code=400,
+            detail="Máximo de 10 arquivos por requisição"
+        )
+    
+    results = []
+    successful = 0
+    failed = 0
+    
+    for file in files:
+        try:
+            # Validar formato do arquivo
+            allowed_extensions = {'.mp3', '.wav', '.flac', '.m4a', '.ogg', '.webm'}
+            file_extension = Path(file.filename).suffix.lower()
+            
+            if file_extension not in allowed_extensions:
+                results.append({
+                    "filename": file.filename,
+                    "status": "error",
+                    "error": f"Formato não suportado: {file_extension}",
+                    "text": "",
+                    "processing_time": 0
+                })
+                failed += 1
+                continue
+            
+            # Criar arquivo temporário
+            temp_file = tempfile.NamedTemporaryFile(
+                delete=False, 
+                suffix=file_extension,
+                dir=str(TEMP_DIR)
+            )
+            
+            # Copiar conteúdo do upload
+            shutil.copyfileobj(file.file, temp_file)
+            temp_file.close()
+            
+            # Carregar modelo
+            whisper_model = load_whisper_model(model)
+            
+            # Transcrever
+            start_time = asyncio.get_event_loop().time()
+            
+            # Detectar idioma se necessário
+            detected_language = None
+            if auto_detect_language and not language:
+                segments, info = whisper_model.transcribe(
+                    temp_file.name,
+                    language=None,
+                    beam_size=1,
+                    best_of=1,
+                    temperature=0.0,
+                    condition_on_previous_text=False,
+                    word_timestamps=False
+                )
+                detected_language = info.language
+            
+            # Transcrição completa
+            final_language = language or detected_language
+            segments, info = whisper_model.transcribe(
+                temp_file.name,
+                language=final_language,
+                beam_size=5,
+                best_of=5,
+                temperature=0.0,
+                word_timestamps=True,
+                condition_on_previous_text=False
+            )
+            
+            # Processar resultado
+            transcription_text = ""
+            word_timestamps = []
+            
+            for segment in segments:
+                transcription_text += segment.text + " "
+                if hasattr(segment, 'words') and segment.words:
+                    for word in segment.words:
+                        word_timestamps.append({
+                            "word": word.word,
+                            "start": word.start,
+                            "end": word.end,
+                            "probability": getattr(word, 'probability', None)
+                        })
+            
+            end_time = asyncio.get_event_loop().time()
+            processing_time = end_time - start_time
+            
+            results.append({
+                "filename": file.filename,
+                "status": "completed",
+                "text": transcription_text.strip(),
+                "processing_time": processing_time,
+                "detected_language": detected_language,
+                "word_timestamps": word_timestamps
+            })
+            
+            successful += 1
+            
+            # Agendar limpeza
+            background_tasks.add_task(cleanup_temp_file, temp_file.name)
+            
+        except Exception as e:
+            logger.error(f"Erro ao transcrever {file.filename}: {str(e)}")
+            results.append({
+                "filename": file.filename,
+                "status": "error",
+                "error": str(e),
+                "text": "",
+                "processing_time": 0
+            })
+            failed += 1
+            
+            # Limpar arquivo temporário em caso de erro
+            if 'temp_file' in locals() and temp_file and os.path.exists(temp_file.name):
+                os.unlink(temp_file.name)
+    
+    return BatchTranscriptionResponse(
+        results=results,
+        total_files=len(files),
+        successful=successful,
+        failed=failed
+    )
 
 async def cleanup_temp_file(file_path: str):
     """Remove arquivo temporário"""

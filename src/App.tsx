@@ -1,10 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { Mic, Download, FileText, Settings, Moon, Sun } from 'lucide-react';
+import { Mic, Download, FileText, Settings, Moon, Sun, Copy, Check } from 'lucide-react';
 import { FileDropZone } from './components/FileDropZone';
 import { ModelSelector } from './components/ModelSelector';
-import { TranscriptionEditor } from './components/TranscriptionEditor';
 import { ProgressBar } from './components/ProgressBar';
 import { Button } from './components/ui/button';
+import { DetailedAnalysis } from './components/DetailedAnalysis';
 import { cn } from './lib/utils';
 
 interface ModelInfo {
@@ -14,21 +14,33 @@ interface ModelInfo {
   available: boolean;
 }
 
-interface TranscriptionResult {
+interface BatchTranscriptionResult {
+  filename: string;
   text: string;
   confidence?: number;
   processing_time?: number;
+  detected_language?: string;
+  word_timestamps?: Array<{
+    word: string;
+    start: number;
+    end: number;
+    probability?: number;
+  }>;
+  status: 'pending' | 'processing' | 'completed' | 'error';
+  error?: string;
 }
 
 const API_BASE_URL = 'http://127.0.0.1:8000';
 
 const App: React.FC = () => {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedModel, setSelectedModel] = useState('base');
-  const [transcription, setTranscription] = useState<TranscriptionResult | null>(null);
+  const [batchResults, setBatchResults] = useState<BatchTranscriptionResult[]>([]);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [currentFileIndex, setCurrentFileIndex] = useState(0);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('theme') === 'dark' || 
@@ -91,9 +103,13 @@ const App: React.FC = () => {
     }
   }, [isDarkMode]);
 
-  const handleFileSelect = useCallback((file: File) => {
-    setSelectedFile(file);
-    setTranscription(null);
+  const handleFilesSelect = useCallback((files: File[]) => {
+    setSelectedFiles(files);
+    setBatchResults(files.map(file => ({
+      filename: file.name,
+      text: '',
+      status: 'pending' as const
+    })));
     setError(null);
     setProgress(0);
   }, []);
@@ -114,91 +130,243 @@ const App: React.FC = () => {
     }
   }, []);
 
-  const startTranscription = useCallback(async () => {
-    if (!selectedFile) return;
+  const startBatchTranscription = useCallback(async () => {
+    if (selectedFiles.length === 0) return;
 
     setIsTranscribing(true);
     setError(null);
     setProgress(0);
-    setTranscription(null);
+    setCurrentFileIndex(0);
 
     try {
-      // Simular progresso
-      const progressInterval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return prev;
-          }
-          return prev + Math.random() * 10;
+      // Se apenas um arquivo, usar endpoint individual
+      if (selectedFiles.length === 1) {
+        const file = selectedFiles[0];
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('model', selectedModel);
+        formData.append('auto_detect_language', 'true');
+
+        const response = await fetch(`${API_BASE_URL}/transcribe`, {
+          method: 'POST',
+          body: formData,
         });
-      }, 500);
 
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('model', selectedModel);
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ detail: 'Erro desconhecido' }));
+          throw new Error(errorData.detail || `HTTP ${response.status}`);
+        }
 
-      const response = await fetch(`${API_BASE_URL}/transcribe`, {
-        method: 'POST',
-        body: formData,
-      });
+        const result = await response.json();
+        
+        setBatchResults([{
+          filename: file.name,
+          text: result.text,
+          confidence: result.confidence,
+          processing_time: result.processing_time,
+          detected_language: result.detected_language,
+          word_timestamps: result.word_timestamps,
+          status: 'completed' as const
+        }]);
+        
+        setProgress(100);
+      } else {
+        // Múltiplos arquivos - usar endpoint de lote
+        const formData = new FormData();
+        selectedFiles.forEach((file) => {
+          formData.append('files', file);
+        });
+        formData.append('model', selectedModel);
+        formData.append('auto_detect_language', 'true');
 
-      clearInterval(progressInterval);
-      setProgress(100);
+        const response = await fetch(`${API_BASE_URL}/transcribe-batch`, {
+          method: 'POST',
+          body: formData,
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'Erro desconhecido' }));
-        throw new Error(errorData.detail || `HTTP ${response.status}`);
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ detail: 'Erro desconhecido' }));
+          throw new Error(errorData.detail || `HTTP ${response.status}`);
+        }
+
+        const result = await response.json();
+        
+        // Converter resultados do backend para o formato esperado
+        const convertedResults = result.results.map((r: any) => ({
+          filename: r.filename,
+          text: r.text,
+          confidence: r.confidence,
+          processing_time: r.processing_time,
+          detected_language: r.detected_language,
+          word_timestamps: r.word_timestamps,
+          status: r.status as 'completed' | 'error',
+          error: r.error
+        }));
+        
+        setBatchResults(convertedResults);
+        setProgress(100);
       }
-
-      const result: TranscriptionResult = await response.json();
-      setTranscription(result);
       
     } catch (error) {
       console.error('Transcription error:', error);
-      setError(error instanceof Error ? error.message : 'Erro durante a transcrição');
+      const errorMessage = error instanceof Error ? error.message : 'Erro durante a transcrição';
+      setError(errorMessage);
     } finally {
       setIsTranscribing(false);
       setProgress(0);
+      setCurrentFileIndex(0);
     }
-  }, [selectedFile, selectedModel]);
+  }, [selectedFiles, selectedModel]);
 
-  const exportTranscription = useCallback((format: 'txt' | 'srt' | 'json') => {
-    if (!transcription) return;
-
-    let content: string;
-    let filename: string;
-    let mimeType: string;
-
-    switch (format) {
-      case 'txt':
-        content = transcription.text;
-        filename = `transcription_${Date.now()}.txt`;
-        mimeType = 'text/plain';
-        break;
-      case 'srt':
-        // Implementação básica de SRT - seria melhor com timestamps
-        content = `1\n00:00:00,000 --> 00:00:10,000\n${transcription.text}\n`;
-        filename = `transcription_${Date.now()}.srt`;
-        mimeType = 'text/plain';
-        break;
-      case 'json':
-        content = JSON.stringify(transcription, null, 2);
-        filename = `transcription_${Date.now()}.json`;
-        mimeType = 'application/json';
-        break;
+  const copyToClipboard = useCallback(async (text: string, index: number) => {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        // Usar a API moderna de clipboard
+        await navigator.clipboard.writeText(text);
+      } else {
+        // Fallback para navegadores mais antigos
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        textArea.remove();
+      }
+      
+      // Mostrar feedback visual
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex(null), 2000);
+      
+      console.log('Texto copiado para a área de transferência');
+    } catch (error) {
+      console.error('Erro ao copiar texto:', error);
+      alert('Erro ao copiar texto. Tente selecionar e copiar manualmente.');
     }
+  }, []);
 
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, [transcription]);
+  const exportSingleResult = useCallback(async (result: BatchTranscriptionResult, format: 'txt' | 'srt' | 'json') => {
+    try {
+      let content: string;
+      let filename: string;
+      let mimeType: string;
+      const baseFilename = result.filename.replace(/\.[^/.]+$/, "");
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+
+      switch (format) {
+        case 'txt':
+          content = result.text;
+          filename = `${baseFilename}_transcription_${timestamp}.txt`;
+          mimeType = 'text/plain';
+          break;
+        case 'srt':
+          // Implementação básica de SRT com timestamps se disponíveis
+          if (result.word_timestamps && result.word_timestamps.length > 0) {
+            let srtContent = '';
+            let segmentIndex = 1;
+            const wordsPerSegment = 10;
+            
+            for (let i = 0; i < result.word_timestamps.length; i += wordsPerSegment) {
+              const segment = result.word_timestamps.slice(i, i + wordsPerSegment);
+              const startTime = segment[0].start;
+              const endTime = segment[segment.length - 1].end;
+              const text = segment.map(w => w.word).join(' ');
+              
+              const startSRT = formatTimeForSRT(startTime);
+              const endSRT = formatTimeForSRT(endTime);
+              
+              srtContent += `${segmentIndex}\n${startSRT} --> ${endSRT}\n${text}\n\n`;
+              segmentIndex++;
+            }
+            content = srtContent;
+          } else {
+            content = `1\n00:00:00,000 --> 00:00:10,000\n${result.text}\n`;
+          }
+          filename = `${baseFilename}_transcription_${timestamp}.srt`;
+          mimeType = 'text/plain';
+          break;
+        case 'json':
+          content = JSON.stringify(result, null, 2);
+          filename = `${baseFilename}_transcription_${timestamp}.json`;
+          mimeType = 'application/json';
+          break;
+        default:
+          throw new Error('Formato não suportado');
+      }
+
+      // Verificar se o conteúdo não está vazio
+      if (!content || content.trim().length === 0) {
+        alert('Erro: Conteúdo vazio para exportar. Verifique se a transcrição foi concluída.');
+        return;
+      }
+
+      console.log('Iniciando download:', filename, 'Tamanho:', content.length, 'caracteres');
+
+      // Criar e baixar o arquivo
+      const blob = new Blob([content], { type: mimeType + ';charset=utf-8' });
+      
+      // Tentar método mais simples primeiro
+      try {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.style.display = 'none';
+        
+        // Adicionar ao DOM temporariamente
+        document.body.appendChild(a);
+        
+        // Simular clique
+        a.click();
+        
+        // Limpar após delay
+        setTimeout(() => {
+          try {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          } catch (e) {
+            console.warn('Erro na limpeza:', e);
+          }
+        }, 1000);
+        
+        console.log('Download iniciado com sucesso:', filename);
+        
+        // Mostrar feedback de sucesso
+        alert(`Download iniciado: ${filename}`);
+        
+      } catch (error) {
+        console.error('Erro no download:', error);
+        
+        // Tentar copiar para clipboard como fallback
+        try {
+          await navigator.clipboard.writeText(content);
+          alert(`Erro no download. O conteúdo foi copiado para a área de transferência.\n\nVocê pode colar em um editor de texto e salvar como "${filename}"`);
+        } catch (clipboardError) {
+          console.error('Erro no clipboard também:', clipboardError);
+          alert(`Erro no download e na cópia. Copie o texto manualmente da interface e salve como "${filename}"`);
+        }
+      }
+      
+    } catch (error) {
+      console.error('Erro ao exportar arquivo:', error);
+      alert('Erro ao exportar arquivo: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
+    }
+  }, []);
+
+  // Função para exportar todos os resultados em lote
+
+  // Função helper para formatar tempo para SRT
+  const formatTimeForSRT = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    const millisecs = Math.floor((seconds % 1) * 1000);
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')},${millisecs.toString().padStart(3, '0')}`;
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
@@ -251,7 +419,7 @@ const App: React.FC = () => {
                 <FileText className="w-5 h-5 text-primary" />
                 Upload de Arquivo
               </h2>
-              <FileDropZone onFileSelect={handleFileSelect} />
+              <FileDropZone onFilesSelect={handleFilesSelect} />
             </div>
 
             <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
@@ -264,10 +432,10 @@ const App: React.FC = () => {
               />
             </div>
 
-            {selectedFile && (
+            {selectedFiles.length > 0 && (
               <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
                 <Button
-                  onClick={startTranscription}
+                  onClick={startBatchTranscription}
                   disabled={isTranscribing || !models.find(m => m.name === selectedModel)?.available}
                   className="w-full"
                   size="lg"
@@ -275,12 +443,12 @@ const App: React.FC = () => {
                   {isTranscribing ? (
                     <>
                       <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-                      Transcrevendo...
+                      Transcrevendo arquivo {currentFileIndex + 1} de {selectedFiles.length}...
                     </>
                   ) : (
                     <>
                       <Mic className="w-4 h-4 mr-2" />
-                      Iniciar Transcrição
+                      Iniciar Transcrição ({selectedFiles.length} arquivo{selectedFiles.length > 1 ? 's' : ''})
                     </>
                   )}
                 </Button>
@@ -296,7 +464,15 @@ const App: React.FC = () => {
                 <h3 className="text-lg font-semibold mb-4">Progresso da Transcrição</h3>
                 <ProgressBar 
                   progress={progress} 
-                  status={progress < 10 ? 'Preparando...' : progress < 50 ? 'Processando áudio...' : 'Transcrevendo...'}
+                  status={progress === 100 ? 'completed' : 'processing'}
+                  currentFile={selectedFiles[currentFileIndex]?.name}
+                  totalFiles={selectedFiles.length}
+                  completedFiles={currentFileIndex}
+                  message={
+                    currentFileIndex < selectedFiles.length 
+                      ? `Processando arquivo ${currentFileIndex + 1} de ${selectedFiles.length}...`
+                      : 'Finalizando...'
+                  }
                 />
               </div>
             )}
@@ -309,59 +485,115 @@ const App: React.FC = () => {
               </div>
             )}
 
-            {/* Transcription Result */}
-            {transcription && (
+            {/* Batch Results */}
+            {batchResults.length > 0 && (
               <div className="bg-card border border-border rounded-lg shadow-sm">
                 <div className="p-6 border-b border-border">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">Resultado da Transcrição</h3>
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => exportTranscription('txt')}
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        TXT
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => exportTranscription('srt')}
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        SRT
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => exportTranscription('json')}
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        JSON
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {transcription.processing_time && (
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Processado em {transcription.processing_time.toFixed(2)} segundos
-                    </p>
-                  )}
+                  <h3 className="text-lg font-semibold">Resultados da Transcrição</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {batchResults.filter(r => r.status === 'completed').length} de {batchResults.length} arquivo(s) processado(s)
+                  </p>
                 </div>
                 
-                <div className="p-6">
-                  <TranscriptionEditor
-                    transcription={transcription.text}
-                    processingTime={transcription.processing_time}
-                    onSave={(text: string) => setTranscription(prev => prev ? { ...prev, text } : null)}
-                  />
+                <div className="divide-y divide-border">
+                  {batchResults.map((result, index) => (
+                    <div key={index} className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium truncate max-w-[200px]">{result.filename}</span>
+                          <span className={cn(
+                            "px-2 py-1 text-xs rounded-full",
+                            result.status === 'completed' && "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+                            result.status === 'processing' && "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+                            result.status === 'pending' && "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
+                            result.status === 'error' && "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                          )}>
+                            {result.status === 'completed' && 'Concluído'}
+                            {result.status === 'processing' && 'Processando...'}
+                            {result.status === 'pending' && 'Pendente'}
+                            {result.status === 'error' && 'Erro'}
+                          </span>
+                        </div>
+                        
+                        {result.status === 'completed' && (
+                          <div className="flex items-center space-x-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => copyToClipboard(result.text, index)}
+                              title="Copiar texto para área de transferência"
+                            >
+                              {copiedIndex === index ? (
+                                <Check className="w-4 h-4 mr-1 text-green-600" />
+                              ) : (
+                                <Copy className="w-4 h-4 mr-1" />
+                              )}
+                              {copiedIndex === index ? 'Copiado!' : 'Copiar'}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => exportSingleResult(result, 'txt')}
+                              title="Baixar como TXT"
+                            >
+                              <Download className="w-4 h-4 mr-1" />
+                              TXT
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => exportSingleResult(result, 'srt')}
+                              title="Baixar como SRT (legendas)"
+                            >
+                              <Download className="w-4 h-4 mr-1" />
+                              SRT
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => exportSingleResult(result, 'json')}
+                              title="Baixar como JSON (dados completos)"
+                            >
+                              <Download className="w-4 h-4 mr-1" />
+                              JSON
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {result.status === 'completed' && (
+                        <div className="space-y-3">
+                          <div className="bg-muted/50 rounded p-3 text-sm">
+                            <p className="line-clamp-3">{result.text}</p>
+                            <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                              {result.processing_time && (
+                                <span>Tempo: {result.processing_time.toFixed(2)}s</span>
+                              )}
+                              {result.detected_language && (
+                                <span>Idioma: {result.detected_language}</span>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {result.word_timestamps && result.word_timestamps.length > 0 && (
+                            <DetailedAnalysis timestamps={result.word_timestamps} />
+                          )}
+                        </div>
+                      )}
+                      
+                      {result.status === 'error' && result.error && (
+                        <div className="bg-destructive/10 rounded p-3 text-sm text-destructive">
+                          {result.error}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
 
             {/* Empty State */}
-            {!isTranscribing && !transcription && !error && (
+            {!isTranscribing && batchResults.length === 0 && !error && (
               <div className="bg-card border border-border rounded-lg p-12 text-center shadow-sm">
                 <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                   <Mic className="w-8 h-8 text-muted-foreground" />
@@ -381,7 +613,7 @@ const App: React.FC = () => {
       <footer className="border-t border-border/40 mt-16">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <p>EchoTranscribe v0.1.0 - Transcrição de áudio com IA local</p>
+            <p>EchoTranscribe v0.2.0 - Transcrição de áudio com IA local</p>
             <p>Feito com ❤️ usando Tauri e React</p>
           </div>
         </div>

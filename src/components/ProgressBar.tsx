@@ -8,6 +8,9 @@ interface ProgressBarProps {
   message?: string;
   showStats?: boolean;
   estimatedTime?: number;
+  currentFile?: string;
+  totalFiles?: number;
+  completedFiles?: number;
   className?: string;
 }
 
@@ -17,6 +20,9 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   message,
   showStats = true,
   estimatedTime,
+  currentFile,
+  totalFiles,
+  completedFiles,
   className
 }) => {
   const getStatusIcon = () => {
@@ -82,6 +88,11 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
         
         {showStats && status === 'processing' && (
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            {totalFiles && completedFiles !== undefined && (
+              <div className="flex items-center gap-1">
+                <span>{completedFiles + 1} de {totalFiles}</span>
+              </div>
+            )}
             {estimatedTime && (
               <div className="flex items-center gap-1">
                 <Zap className="w-3 h-3" />
@@ -121,6 +132,13 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
           </div>
         )}
       </div>
+
+      {/* Mensagem adicional ou arquivo atual */}
+      {currentFile && status === 'processing' && (
+        <div className="p-2 bg-muted/50 rounded text-sm text-muted-foreground">
+          <span className="font-medium">Processando:</span> {currentFile}
+        </div>
+      )}
 
       {/* Mensagem adicional ou detalhes */}
       {status === 'error' && (

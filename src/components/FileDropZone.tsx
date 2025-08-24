@@ -3,7 +3,7 @@ import { Upload, FileAudio, X, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FileDropZoneProps {
-  onFileSelect: (file: File) => void;
+  onFilesSelect: (files: File[]) => void;
   accept?: string;
   maxSize?: number; // em bytes
   className?: string;
@@ -22,16 +22,17 @@ const ACCEPTED_FORMATS = {
 };
 
 const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
+const MAX_FILES = 10;
 
 export const FileDropZone: React.FC<FileDropZoneProps> = ({
-  onFileSelect,
+  onFilesSelect,
   accept = Object.keys(ACCEPTED_FORMATS).join(','),
   maxSize = MAX_FILE_SIZE,
   className
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validateFile = useCallback((file: File): string | null => {
@@ -53,19 +54,24 @@ export const FileDropZone: React.FC<FileDropZoneProps> = ({
     return null;
   }, [maxSize]);
 
-  const handleFile = useCallback((file: File) => {
-    const validationError = validateFile(file);
-    
-    if (validationError) {
-      setError(validationError);
-      setSelectedFile(null);
+  const handleFiles = useCallback((files: File[]) => {
+    const validFiles: File[] = [];
+    for (const file of files) {
+      const validationError = validateFile(file);
+      if (validationError) {
+        setError(validationError);
+        continue;
+      }
+      validFiles.push(file);
+    }
+    if (validFiles.length === 0) {
+      setSelectedFiles([]);
       return;
     }
-
     setError(null);
-    setSelectedFile(file);
-    onFileSelect(file);
-  }, [validateFile, onFileSelect]);
+    setSelectedFiles(validFiles.slice(0, MAX_FILES));
+    onFilesSelect(validFiles.slice(0, MAX_FILES));
+  }, [validateFile, onFilesSelect]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -80,32 +86,31 @@ export const FileDropZone: React.FC<FileDropZoneProps> = ({
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-
     const files = Array.from(e.dataTransfer.files);
     if (files.length === 0) return;
-
-    // Pegar apenas o primeiro arquivo
-    handleFile(files[0]);
-  }, [handleFile]);
+    handleFiles(files);
+  }, [handleFiles]);
 
   const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      handleFile(files[0]);
+      handleFiles(Array.from(files));
     }
-  }, [handleFile]);
+  }, [handleFiles]);
 
   const handleClick = useCallback(() => {
     fileInputRef.current?.click();
   }, []);
 
-  const removeFile = useCallback(() => {
-    setSelectedFile(null);
+  const removeFile = useCallback((index: number) => {
+    const newFiles = [...selectedFiles];
+    newFiles.splice(index, 1);
+    setSelectedFiles(newFiles);
     setError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  }, []);
+  }, [selectedFiles]);
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
@@ -123,7 +128,7 @@ export const FileDropZone: React.FC<FileDropZoneProps> = ({
           "hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
           isDragOver 
             ? "border-primary bg-primary/5 scale-105" 
-            : selectedFile 
+            : selectedFiles.length > 0
               ? "border-green-500 bg-green-50 dark:bg-green-950" 
               : error 
                 ? "border-destructive bg-destructive/5" 
@@ -146,38 +151,40 @@ export const FileDropZone: React.FC<FileDropZoneProps> = ({
           ref={fileInputRef}
           type="file"
           accept={accept}
+          multiple
           onChange={handleFileInputChange}
           className="hidden"
-          aria-label="Selecionar arquivo de áudio"
+          aria-label="Selecionar arquivos de áudio"
         />
 
-        <div className="flex flex-col items-center gap-4">
-          {selectedFile ? (
-            <>
-              <div className="flex items-center justify-center w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full">
+        <div className="flex flex-col items-center gap-4 w-full">
+          {selectedFiles.length > 0 ? (
+            <div className="w-full max-w-md space-y-3">
+              <div className="flex items-center justify-center w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full mx-auto">
                 <FileAudio className="w-8 h-8 text-green-600 dark:text-green-400" />
               </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium text-foreground">
-                    {selectedFile.name}
-                  </p>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeFile();
-                    }}
-                    className="p-1 hover:bg-destructive/10 rounded-full transition-colors"
-                    aria-label="Remover arquivo"
-                  >
-                    <X className="w-4 h-4 text-destructive" />
-                  </button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {formatFileSize(selectedFile.size)}
-                </p>
-              </div>
-            </>
+              <ul className="space-y-2">
+                {selectedFiles.map((file, idx) => (
+                  <li key={file.name + idx} className="flex items-center justify-between px-3 py-2 rounded bg-green-50 dark:bg-green-950 min-h-[40px]">
+                    <div className="flex-1 flex flex-col min-w-0">
+                      <span className="text-sm font-medium text-foreground break-words leading-tight">{file.name}</span>
+                      <span className="text-xs text-muted-foreground">{formatFileSize(file.size)}</span>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFile(idx);
+                      }}
+                      className="ml-3 p-1 hover:bg-destructive/10 rounded-full transition-colors flex-shrink-0"
+                      aria-label="Remover arquivo"
+                    >
+                      <X className="w-4 h-4 text-destructive" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-xs text-muted-foreground text-center mt-3 font-medium">{selectedFiles.length} arquivo(s) selecionado(s)</p>
+            </div>
           ) : (
             <>
               <div className={cn(
@@ -197,19 +204,21 @@ export const FileDropZone: React.FC<FileDropZoneProps> = ({
                   )} />
                 )}
               </div>
-              
               <div className="space-y-2">
                 <p className="text-lg font-medium">
                   {isDragOver 
-                    ? "Solte o arquivo aqui" 
-                    : "Arrastar arquivo ou clicar para selecionar"
+                    ? "Solte os arquivos aqui" 
+                    : "Arraste arquivos ou clique para selecionar"
                   }
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Formatos suportados: MP3, WAV, FLAC, M4A, OGG, WebM
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Tamanho máximo: {(maxSize / (1024 * 1024)).toFixed(0)}MB
+                  Tamanho máximo: {(maxSize / (1024 * 1024)).toFixed(0)}MB por arquivo
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Máximo de {MAX_FILES} arquivos por vez
                 </p>
               </div>
             </>
