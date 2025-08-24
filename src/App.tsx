@@ -498,11 +498,11 @@ const App: React.FC = () => {
                 <div className="divide-y divide-border">
                   {batchResults.map((result, index) => (
                     <div key={index} className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium truncate max-w-[200px]">{result.filename}</span>
+                      <div className="flex items-start justify-between mb-3 gap-3">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <span className="text-sm font-medium break-words leading-tight">{result.filename}</span>
                           <span className={cn(
-                            "px-2 py-1 text-xs rounded-full",
+                            "px-2 py-1 text-xs rounded-full flex-shrink-0",
                             result.status === 'completed' && "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
                             result.status === 'processing' && "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
                             result.status === 'pending' && "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
@@ -516,7 +516,7 @@ const App: React.FC = () => {
                         </div>
                         
                         {result.status === 'completed' && (
-                          <div className="flex items-center space-x-1">
+                          <div className="flex items-center flex-wrap gap-1 flex-shrink-0">
                             <Button
                               variant="outline"
                               size="sm"
@@ -564,8 +564,8 @@ const App: React.FC = () => {
                       {result.status === 'completed' && (
                         <div className="space-y-3">
                           <div className="bg-muted/50 rounded p-3 text-sm">
-                            <p className="line-clamp-3">{result.text}</p>
-                            <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                            <p className="whitespace-pre-wrap leading-relaxed">{result.text}</p>
+                            <div className="flex items-center gap-4 mt-3 pt-2 border-t border-border/50 text-xs text-muted-foreground">
                               {result.processing_time && (
                                 <span>Tempo: {result.processing_time.toFixed(2)}s</span>
                               )}
