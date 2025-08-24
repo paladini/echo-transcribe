@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AudioScribe Backend - FastAPI server for audio transcription
+EchoTranscribe Backend - FastAPI server for audio transcription
 """
 
 import os
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 # Inicializar FastAPI
 app = FastAPI(
-    title="AudioScribe API",
+    title="EchoTranscribe API",
     description="API para transcrição de áudio usando modelos locais",
     version="0.1.0"
 )
@@ -54,8 +54,8 @@ class ProgressUpdate(BaseModel):
     message: Optional[str] = None
 
 # Variáveis globais
-MODELS_DIR = Path.home() / ".audioscribe" / "models"
-TEMP_DIR = Path.home() / ".audioscribe" / "temp"
+MODELS_DIR = Path.home() / ".echo-transcribe" / "models"
+TEMP_DIR = Path.home() / ".echo-transcribe" / "temp"
 
 # Criar diretórios se não existirem
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
@@ -141,7 +141,7 @@ def load_whisper_model(model_name: str):
 @app.get("/")
 async def root():
     """Endpoint raiz para verificar se a API está funcionando"""
-    return {"message": "AudioScribe API está funcionando!", "version": "0.1.0"}
+    return {"message": "EchoTranscribe API está funcionando!", "version": "0.1.0"}
 
 @app.get("/health")
 async def health_check():
@@ -262,13 +262,13 @@ async def cleanup_temp_file(file_path: str):
 @app.on_event("startup")
 async def startup_event():
     """Evento executado na inicialização da API"""
-    logger.info("AudioScribe API iniciada")
+    logger.info("EchoTranscribe API iniciada")
     check_model_availability()
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Evento executado no encerramento da API"""
-    logger.info("AudioScribe API encerrada")
+    logger.info("EchoTranscribe API encerrada")
     
     # Limpar arquivos temporários
     try:

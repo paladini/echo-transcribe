@@ -1,11 +1,11 @@
 [package]
-name = "audioscribe"
+name = "echo-transcribe"
 version = "0.1.0"
 description = "A Tauri App for audio transcription"
 authors = ["you"]
 license = ""
 repository = ""
-default-run = "audioscribe"
+default-run = "echo-transcribe"
 edition = "2021"
 rust-version = "1.60"
 

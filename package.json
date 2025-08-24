@@ -1,5 +1,5 @@
 {
-  "name": "audioscribe",
+  "name": "echo-transcribe",
   "private": true,
   "version": "0.1.0",
   "type": "module",

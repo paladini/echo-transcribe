@@ -212,7 +212,7 @@ const App: React.FC = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                  AudioScribe
+                  EchoTranscribe
                 </h1>
                 <p className="text-sm text-muted-foreground">
                   Transcrição de áudio com IA local
@@ -381,7 +381,7 @@ const App: React.FC = () => {
       <footer className="border-t border-border/40 mt-16">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <p>AudioScribe v0.1.0 - Transcrição de áudio com IA local</p>
+            <p>EchoTranscribe v0.1.0 - Transcrição de áudio com IA local</p>
             <p>Feito com ❤️ usando Tauri e React</p>
           </div>
         </div>

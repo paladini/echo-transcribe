@@ -1,6 +1,6 @@
-Projeto: AudioScribe - Transcrição de Áudio com IA Local
+Projeto: EchoTranscribe - Transcrição de Áudio com IA Local
 Ideia e Objetivo
-O AudioScribe é uma aplicação de desktop open-source e gratuita, projetada para transcrever arquivos de áudio de forma eficiente e segura, utilizando modelos de IA que rodam localmente. O principal objetivo é oferecer uma ferramenta de transcrição acessível e privada, eliminando a necessidade de enviar dados para a nuvem.
+O EchoTranscribe é uma aplicação de desktop open-source e gratuita, projetada para transcrever arquivos de áudio de forma eficiente e segura, utilizando modelos de IA que rodam localmente. O principal objetivo é oferecer uma ferramenta de transcrição acessível e privada, eliminando a necessidade de enviar dados para a nuvem.
 
 A interface gráfica será um diferencial, focando em um design bonito e moderno que proporcione uma experiência de usuário fluida e agradável, mesmo para tarefas técnicas. A aplicação será distribuída como um único executável para Windows, macOS e Linux, graças ao uso de Tauri para o frontend e Python para o backend.
 
@@ -18,7 +18,7 @@ Edição e exportação: Permitir a edição do texto transcrito e a exportaçã
 Interface de usuário: A UI precisa ser minimalista, com cores agradáveis, animações sutis e foco na tipografia para facilitar a leitura.
 
 Plano de Implementação Detalhado
-O desenvolvimento do AudioScribe será dividido em três fases principais: Setup e Prototipagem, Desenvolvimento do Core e Aprimoramentos e Empacotamento.
+O desenvolvimento do EchoTranscribe será dividido em três fases principais: Setup e Prototipagem, Desenvolvimento do Core e Aprimoramentos e Empacotamento.
 
 Fase 1: Setup e Prototipagem
 Objetivo: Estruturar o projeto, configurar o ambiente de desenvolvimento e criar o protótipo inicial da interface.
@@ -84,7 +84,7 @@ Tarefa 6.2: Usar o Tauri para gerar pacotes de instalação para Windows (.msi),
 Tarefa 6.3: Criar um README.md detalhado no repositório do GitHub, com instruções de instalação e uso, e uma seção de contribuições.
 
 Prompt para o GitHub Copilot
-Você é um desenvolvedor sênior com experiência em criar aplicações cross-platform com Tauri e Python. Sua tarefa é criar um plano de implementação para o "AudioScribe", uma aplicação open-source de transcrição de áudio local com uma interface gráfica moderna e bonita.
+Você é um desenvolvedor sênior com experiência em criar aplicações cross-platform com Tauri e Python. Sua tarefa é criar um plano de implementação para o "EchoTranscribe", uma aplicação open-source de transcrição de áudio local com uma interface gráfica moderna e bonita.
 
 **O que você precisa fazer:**
 1.  **Estruturar o projeto**: Crie a estrutura de arquivos para uma aplicação Tauri com um backend Python em `src-tauri`.

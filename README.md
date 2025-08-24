@@ -1,8 +1,8 @@
-# AudioScribe 🎙️
+# EchoTranscribe 🎙️
 
 Uma aplicação de desktop open-source para transcrição de áudio usando IA local. Privado, seguro e eficiente.
 
-![AudioScribe Screenshot](docs/screenshot.png)
+![EchoTranscribe Screenshot](docs/screenshot.png)
 
 ## ✨ Características
 
@@ -41,8 +41,8 @@ No Windows, você precisará do Microsoft Visual Studio C++ Build Tools.
 
 1. **Clone o repositório**
 ```bash
-git clone https://github.com/seu-usuario/audioscribe.git
-cd audioscribe
+git clone https://github.com/seu-usuario/echo-transcribe.git
+cd echo-transcribe
 ```
 
 2. **Instale as dependências do Node.js**
@@ -64,7 +64,7 @@ npm run tauri dev
 
 ### Instalação para Produção
 
-Baixe a versão mais recente dos [Releases](https://github.com/seu-usuario/audioscribe/releases) para seu sistema operacional.
+Baixe a versão mais recente dos [Releases](https://github.com/seu-usuario/echo-transcribe/releases) para seu sistema operacional.
 
 ## 🎯 Como Usar
 
@@ -113,10 +113,10 @@ python main.py       # Iniciar servidor backend standalone
 
 ### Modelos de IA
 
-O AudioScribe baixa automaticamente os modelos de IA conforme necessário. Os modelos ficam armazenados em:
+O EchoTranscribe baixa automaticamente os modelos de IA conforme necessário. Os modelos ficam armazenados em:
 
-- **Linux/macOS**: `~/.audioscribe/models/`
-- **Windows**: `%USERPROFILE%\\.audioscribe\\models\\`
+- **Linux/macOS**: `~/.echo-transcribe/models/`
+- **Windows**: `%USERPROFILE%\\.echo-transcribe\\models\\`
 
 ### Formatos Suportados
 
@@ -148,8 +148,8 @@ O AudioScribe baixa automaticamente os modelos de IA conforme necessário. Os mo
 ### Logs de Debug
 
 Os logs da aplicação ficam em:
-- **Linux/macOS**: `~/.audioscribe/logs/`
-- **Windows**: `%USERPROFILE%\\.audioscribe\\logs\\`
+- **Linux/macOS**: `~/.echo-transcribe/logs/`
+- **Windows**: `%USERPROFILE%\\.echo-transcribe\\logs\\`
 
 ## 🤝 Contribuindo
 
@@ -194,11 +194,11 @@ Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICE
 ## 📞 Suporte
 
 - 📧 Email: [seu-email@example.com](mailto:seu-email@example.com)
-- 🐛 Issues: [GitHub Issues](https://github.com/seu-usuario/audioscribe/issues)
-- 💬 Discussões: [GitHub Discussions](https://github.com/seu-usuario/audioscribe/discussions)
+- 🐛 Issues: [GitHub Issues](https://github.com/seu-usuario/echo-transcribe/issues)
+- 💬 Discussões: [GitHub Discussions](https://github.com/seu-usuario/echo-transcribe/discussions)
 
 ---
 
-**AudioScribe** - Transformando áudio em texto com privacidade e qualidade. 🎙️✨
+**EchoTranscribe** - Transformando áudio em texto com privacidade e qualidade. 🎙️✨
 
 
