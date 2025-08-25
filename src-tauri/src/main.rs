@@ -2,45 +2,24 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use tauri::Manager;
-use std::process::{Command, Stdio};
-use std::thread;
-use std::time::Duration;
 
 fn main() {
     tauri::Builder::default()
         .setup(|app| {
-            // Iniciar o servidor Python em background
-            let app_handle = app.handle();
-            thread::spawn(move || {
-                start_python_server();
-            });
-            
-            // Aguardar o servidor iniciar
-            thread::sleep(Duration::from_secs(2));
-            
+            // Simply log that app started, don't auto-start backend
+            println!("EchoTranscribe started. Please ensure backend is running on http://localhost:8000");
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![])
+        .invoke_handler(tauri::generate_handler![check_backend_status])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
 
-fn start_python_server() {
-    let backend_path = "backend";
-    
-    #[cfg(target_os = "windows")]
-    let python_cmd = "python";
-    #[cfg(not(target_os = "windows"))]
-    let python_cmd = "python3";
-    
-    let mut child = Command::new(python_cmd)
-        .arg("main.py")
-        .current_dir(backend_path)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .expect("Failed to start Python backend");
-    
-    // Aguardar o processo terminar
-    let _ = child.wait();
+#[tauri::command]
+async fn check_backend_status() -> Result<bool, String> {
+    // Check if backend is responding
+    match reqwest::get("http://localhost:8000/health").await {
+        Ok(response) => Ok(response.status().is_success()),
+        Err(_) => Ok(false),
+    }
 }

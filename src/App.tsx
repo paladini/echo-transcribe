@@ -3,6 +3,7 @@ import { Mic, Download, FileText, Settings as SettingsIcon, Copy, Check } from '
 import { FileDropZone } from './components/FileDropZone';
 import { ModelSelector } from './components/ModelSelector';
 import { ProgressBar } from './components/ProgressBar';
+import { BackendStatus } from './components/BackendStatus';
 import { Button } from './components/ui/button';
 import { DetailedAnalysis } from './components/DetailedAnalysis';
 import { Settings } from './components/Settings';
@@ -58,6 +59,7 @@ function AppContent() {
   const [downloadStatus, setDownloadStatus] = useState<{[key: string]: 'downloading' | 'success' | 'error'}>({});
   const [copyWithTimestamps, setCopyWithTimestamps] = useState(false);
   const [currentView, setCurrentView] = useState<'main' | 'settings'>('main');
+  const [isBackendAvailable, setIsBackendAvailable] = useState(false);
 
   const [models] = useState<ModelInfo[]>([
     {
@@ -489,6 +491,11 @@ function AppContent() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
+        {/* Backend Status Check */}
+        <div className="mb-6">
+          <BackendStatus onStatusChange={setIsBackendAvailable} />
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Panel - File Upload and Model Selection */}
           <div className="lg:col-span-1 space-y-6">
@@ -514,7 +521,7 @@ function AppContent() {
               <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
                 <Button
                   onClick={startBatchTranscription}
-                  disabled={isTranscribing || !models.find(m => m.name === selectedModel)?.available}
+                  disabled={isTranscribing || !isBackendAvailable || !models.find(m => m.name === selectedModel)?.available}
                   className="w-full"
                   size="lg"
                 >

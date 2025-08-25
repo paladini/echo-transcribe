@@ -7,7 +7,12 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "backend": "./start-backend.sh",
+    "backend:win": "./start-backend.bat",
+    "dev:full": "npm run backend & npm run tauri:dev"
   },
   "dependencies": {
     "@tauri-apps/api": "^1.5.0",
