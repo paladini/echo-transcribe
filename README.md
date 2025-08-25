@@ -2,7 +2,7 @@
 
 An open-source desktop application for audio transcription using local AI. Private, secure and efficient.
 
-<img width="995" height="929" alt="image" src="https://github.com/user-attachments/assets/e3399f9a-5f09-4eeb-9d7d-d3afdf50e7a2" />
+<img width="800" height="637" alt="image" style="text" src="https://github.com/user-attachments/assets/2c3db621-1bae-4cea-ad7b-870265e29b16" />
 
 ## ✨ Features
 
