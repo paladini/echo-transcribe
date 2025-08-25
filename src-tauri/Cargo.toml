@@ -1,10 +1,11 @@
 [package]
 name = "echo-transcribe"
 version = "0.1.0"
-description = "A Tauri App for audio transcription"
-authors = ["you"]
-license = ""
-repository = ""
+description = "A Tauri App for audio transcription using local AI models"
+authors = ["paladini <https://github.com/paladini>"]
+license = "MIT"
+repository = "https://github.com/paladini/echo-transcribe"
+homepage = "https://github.com/paladini/echo-transcribe"
 default-run = "echo-transcribe"
 edition = "2021"
 rust-version = "1.60"

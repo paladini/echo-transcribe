@@ -46,7 +46,7 @@ On Windows, you'll need Microsoft Visual Studio C++ Build Tools.
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/your-username/echo-transcribe.git
+git clone https://github.com/paladini/echo-transcribe.git
 cd echo-transcribe
 ```
 
@@ -87,7 +87,7 @@ npm run tauri:dev
 
 ### Production Installation
 
-Download the latest version from [Releases](https://github.com/your-username/echo-transcribe/releases) for your operating system.
+Download the latest version from [Releases](https://github.com/paladini/echo-transcribe/releases) for your operating system.
 
 ## 🎯 How to Use
 
@@ -237,9 +237,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- 📧 Email: [your-email@example.com](mailto:your-email@example.com)
-- 🐛 Issues: [GitHub Issues](https://github.com/your-username/echo-transcribe/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/your-username/echo-transcribe/discussions)
+-  Issues: [GitHub Issues](https://github.com/paladini/echo-transcribe/issues)
+- 💬 Discussions: [GitHub Discussions](https://github.com/paladini/echo-transcribe/discussions)
+- 👤 Author: [github.com/paladini](https://github.com/paladini)
 
 ---
 

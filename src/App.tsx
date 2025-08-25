@@ -121,25 +121,63 @@ function AppContent() {
     setProgress(0);
     setCurrentFileIndex(0);
 
+    // Função auxiliar para simular progresso durante upload e processamento
+    const simulateProgress = (targetProgress: number, duration: number) => {
+      return new Promise<void>((resolve) => {
+        const startTime = Date.now();
+        let currentProgress = 0;
+        
+        const updateProgress = () => {
+          const elapsed = Date.now() - startTime;
+          const progressRatio = Math.min(elapsed / duration, 1);
+          currentProgress = targetProgress * progressRatio;
+          
+          setProgress(Math.round(currentProgress));
+          
+          if (progressRatio < 1) {
+            setTimeout(updateProgress, 100); // Atualizar a cada 100ms
+          } else {
+            setProgress(targetProgress);
+            resolve();
+          }
+        };
+        
+        updateProgress();
+      });
+    };
+
     try {
       // Se apenas um arquivo, usar endpoint individual
       if (selectedFiles.length === 1) {
         const file = selectedFiles[0];
+        setCurrentFileIndex(0);
+        
+        // Simular progresso de upload (0-20%)
+        await simulateProgress(20, 1000);
+        
         const formData = new FormData();
         formData.append('file', file);
         formData.append('model', selectedModel);
         formData.append('auto_detect_language', 'true');
+
+        // Simular progresso de início do processamento (20-30%)
+        await simulateProgress(30, 500);
 
         const response = await fetch(`${API_BASE_URL}/transcribe`, {
           method: 'POST',
           body: formData,
         });
 
+        // Simular progresso durante a espera da resposta (30-90%)
+        const progressPromise = simulateProgress(90, 3000);
+        
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ detail: 'Erro desconhecido' }));
           throw new Error(errorData.detail || `HTTP ${response.status}`);
         }
 
+        await progressPromise; // Aguardar o progresso simulado
+        
         const result = await response.json();
         
         setBatchResults([{
@@ -152,42 +190,80 @@ function AppContent() {
           status: 'completed' as const
         }]);
         
-        setProgress(100);
+        // Finalizar progresso (90-100%)
+        await simulateProgress(100, 500);
+        
       } else {
-        // Múltiplos arquivos - usar endpoint de lote
-        const formData = new FormData();
-        selectedFiles.forEach((file) => {
-          formData.append('files', file);
-        });
-        formData.append('model', selectedModel);
-        formData.append('auto_detect_language', 'true');
+        // Múltiplos arquivos - processar individualmente para mostrar progresso
+        const results: BatchTranscriptionResult[] = [];
+        const totalFiles = selectedFiles.length;
+        
+        for (let i = 0; i < selectedFiles.length; i++) {
+          const file = selectedFiles[i];
+          setCurrentFileIndex(i);
+          
+          const fileProgress = {
+            start: (i / totalFiles) * 100,
+            end: ((i + 1) / totalFiles) * 100
+          };
+          
+          try {
+            // Simular upload do arquivo atual
+            await simulateProgress(fileProgress.start + 5, 300);
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('model', selectedModel);
+            formData.append('auto_detect_language', 'true');
 
-        const response = await fetch(`${API_BASE_URL}/transcribe-batch`, {
-          method: 'POST',
-          body: formData,
-        });
+            // Simular início do processamento
+            await simulateProgress(fileProgress.start + 10, 200);
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ detail: 'Erro desconhecido' }));
-          throw new Error(errorData.detail || `HTTP ${response.status}`);
+            const response = await fetch(`${API_BASE_URL}/transcribe`, {
+              method: 'POST',
+              body: formData,
+            });
+
+            // Simular progresso durante processamento
+            const processingProgress = simulateProgress(fileProgress.end - 5, 2000);
+
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({ detail: 'Erro desconhecido' }));
+              throw new Error(errorData.detail || `HTTP ${response.status}`);
+            }
+
+            await processingProgress;
+            
+            const result = await response.json();
+            
+            results.push({
+              filename: file.name,
+              text: result.text,
+              confidence: result.confidence,
+              processing_time: result.processing_time,
+              detected_language: result.detected_language,
+              word_timestamps: result.word_timestamps,
+              status: 'completed' as const
+            });
+            
+            // Finalizar progresso do arquivo atual
+            await simulateProgress(fileProgress.end, 200);
+            
+          } catch (error) {
+            results.push({
+              filename: file.name,
+              text: '',
+              status: 'error' as const,
+              error: error instanceof Error ? error.message : 'Erro desconhecido'
+            });
+            
+            // Mesmo com erro, avançar o progresso
+            setProgress(fileProgress.end);
+          }
+          
+          // Atualizar resultados incrementalmente
+          setBatchResults([...results]);
         }
-
-        const result = await response.json();
-        
-        // Converter resultados do backend para o formato esperado
-        const convertedResults = result.results.map((r: any) => ({
-          filename: r.filename,
-          text: r.text,
-          confidence: r.confidence,
-          processing_time: r.processing_time,
-          detected_language: r.detected_language,
-          word_timestamps: r.word_timestamps,
-          status: r.status as 'completed' | 'error',
-          error: r.error
-        }));
-        
-        setBatchResults(convertedResults);
-        setProgress(100);
       }
       
     } catch (error) {
@@ -196,8 +272,11 @@ function AppContent() {
       setError(errorMessage);
     } finally {
       setIsTranscribing(false);
-      setProgress(0);
-      setCurrentFileIndex(0);
+      // Manter progresso em 100% por um momento antes de resetar
+      setTimeout(() => {
+        setProgress(0);
+        setCurrentFileIndex(0);
+      }, 2000);
     }
   }, [selectedFiles, selectedModel]);
 
@@ -546,10 +625,17 @@ function AppContent() {
                   currentFile={selectedFiles[currentFileIndex]?.name}
                   totalFiles={selectedFiles.length}
                   completedFiles={currentFileIndex}
+                  estimatedTime={
+                    progress > 0 && progress < 100 
+                      ? Math.max(1, Math.round((100 - progress) * 0.5)) // Estimativa baseada no progresso
+                      : undefined
+                  }
                   message={
-                    currentFileIndex < selectedFiles.length 
-                      ? `Processando arquivo ${currentFileIndex + 1} de ${selectedFiles.length}...`
-                      : 'Finalizando...'
+                    progress === 0 ? 'Iniciando transcrição...' :
+                    progress < 30 ? 'Enviando arquivo...' :
+                    progress < 90 ? `Processando com modelo ${selectedModel}...` :
+                    progress === 100 ? 'Transcrição concluída!' :
+                    `Processando arquivo ${currentFileIndex + 1} de ${selectedFiles.length}...`
                   }
                 />
               </div>

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
 EchoTranscribe Backend - FastAPI server for audio transcription
+Author: paladini (https://github.com/paladini)
+Repository: https://github.com/paladini/echo-transcribe
 """
 
 import os
