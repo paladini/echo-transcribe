@@ -9,14 +9,21 @@ import os
 import asyncio
 import tempfile
 import shutil
+import json
+import aiofiles
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 import uvicorn
 from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 import logging
+import hashlib
+import urllib.request
+from urllib.parse import urlparse
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -51,6 +58,17 @@ class ModelInfo(BaseModel):
     size: str
     description: str
     available: bool
+    download_url: Optional[str] = None
+    file_size: Optional[int] = None
+    sha256: Optional[str] = None
+
+class ModelDownloadStatus(BaseModel):
+    model_name: str
+    status: str  # 'downloading', 'completed', 'error', 'idle'
+    progress: float = 0.0
+    download_speed: Optional[str] = None
+    eta: Optional[str] = None
+    error_message: Optional[str] = None
 
 class BatchTranscriptionResponse(BaseModel):
     results: List[dict]
@@ -66,44 +84,310 @@ class BatchTranscriptionRequest(BaseModel):
 # Variáveis globais
 MODELS_DIR = Path.home() / ".echo-transcribe" / "models"
 TEMP_DIR = Path.home() / ".echo-transcribe" / "temp"
+DOWNLOADS_DIR = Path.home() / ".echo-transcribe" / "downloads"
 
 # Criar diretórios se não existirem
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
 TEMP_DIR.mkdir(parents=True, exist_ok=True)
+DOWNLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
-# Lista de modelos disponíveis
+# URLs dos modelos Whisper (Hugging Face)
+MODEL_URLS = {
+    "tiny": {
+        "repo": "openai/whisper-tiny",
+        "files": [
+            "config.json",
+            "model.bin",
+            "tokenizer.json",
+            "vocab.json"
+        ]
+    },
+    "tiny.en": {
+        "repo": "openai/whisper-tiny.en", 
+        "files": [
+            "config.json",
+            "model.bin",
+            "tokenizer.json",
+            "vocab.json"
+        ]
+    },
+    "base": {
+        "repo": "openai/whisper-base",
+        "files": [
+            "config.json",
+            "model.bin", 
+            "tokenizer.json",
+            "vocab.json"
+        ]
+    },
+    "base.en": {
+        "repo": "openai/whisper-base.en",
+        "files": [
+            "config.json",
+            "model.bin",
+            "tokenizer.json", 
+            "vocab.json"
+        ]
+    },
+    "small": {
+        "repo": "openai/whisper-small",
+        "files": [
+            "config.json",
+            "model.bin",
+            "tokenizer.json",
+            "vocab.json"
+        ]
+    },
+    "small.en": {
+        "repo": "openai/whisper-small.en",
+        "files": [
+            "config.json", 
+            "model.bin",
+            "tokenizer.json",
+            "vocab.json"
+        ]
+    },
+    "medium": {
+        "repo": "openai/whisper-medium",
+        "files": [
+            "config.json",
+            "model.bin",
+            "tokenizer.json",
+            "vocab.json"
+        ]
+    },
+    "medium.en": {
+        "repo": "openai/whisper-medium.en",
+        "files": [
+            "config.json",
+            "model.bin", 
+            "tokenizer.json",
+            "vocab.json"
+        ]
+    },
+    "large": {
+        "repo": "openai/whisper-large",
+        "files": [
+            "config.json",
+            "model.bin",
+            "tokenizer.json",
+            "vocab.json"
+        ]
+    },
+    "large-v2": {
+        "repo": "openai/whisper-large-v2",
+        "files": [
+            "config.json",
+            "model.bin",
+            "tokenizer.json", 
+            "vocab.json"
+        ]
+    },
+    "large-v3": {
+        "repo": "openai/whisper-large-v3",
+        "files": [
+            "config.json",
+            "model.bin",
+            "tokenizer.json",
+            "vocab.json"
+        ]
+    }
+}
+
+# Lista de modelos disponíveis (expandida)
 AVAILABLE_MODELS = [
     ModelInfo(
         name="tiny",
         size="39 MB",
-        description="Modelo pequeno e rápido, menor precisão",
-        available=False
+        description="Modelo pequeno e rápido, menor precisão. Multilíngue.",
+        available=False,
+        file_size=39 * 1024 * 1024
+    ),
+    ModelInfo(
+        name="tiny.en",
+        size="39 MB", 
+        description="Modelo pequeno e rápido, apenas inglês.",
+        available=False,
+        file_size=39 * 1024 * 1024
     ),
     ModelInfo(
         name="base",
         size="74 MB", 
-        description="Modelo balanceado entre velocidade e precisão",
-        available=False
+        description="Modelo balanceado entre velocidade e precisão. Multilíngue.",
+        available=False,
+        file_size=74 * 1024 * 1024
+    ),
+    ModelInfo(
+        name="base.en",
+        size="74 MB",
+        description="Modelo balanceado, apenas inglês.",
+        available=False,
+        file_size=74 * 1024 * 1024
     ),
     ModelInfo(
         name="small",
         size="244 MB",
-        description="Modelo com boa precisão, velocidade média",
-        available=False
+        description="Modelo com boa precisão, velocidade média. Multilíngue.",
+        available=False,
+        file_size=244 * 1024 * 1024
+    ),
+    ModelInfo(
+        name="small.en",
+        size="244 MB",
+        description="Modelo com boa precisão, apenas inglês.",
+        available=False,
+        file_size=244 * 1024 * 1024
     ),
     ModelInfo(
         name="medium",
         size="769 MB",
-        description="Modelo com alta precisão, mais lento",
-        available=False
+        description="Modelo com alta precisão, mais lento. Multilíngue.",
+        available=False,
+        file_size=769 * 1024 * 1024
+    ),
+    ModelInfo(
+        name="medium.en",
+        size="769 MB",
+        description="Modelo com alta precisão, apenas inglês.",
+        available=False,
+        file_size=769 * 1024 * 1024
+    ),
+    ModelInfo(
+        name="large",
+        size="1550 MB",
+        description="Modelo grande com excelente precisão. Multilíngue.",
+        available=False,
+        file_size=1550 * 1024 * 1024
+    ),
+    ModelInfo(
+        name="large-v2",
+        size="1550 MB",
+        description="Versão 2 do modelo grande, melhor qualidade. Multilíngue.",
+        available=False,
+        file_size=1550 * 1024 * 1024
+    ),
+    ModelInfo(
+        name="large-v3",
+        size="1550 MB",
+        description="Versão mais recente, melhor qualidade e suporte a idiomas. Multilíngue.",
+        available=False,
+        file_size=1550 * 1024 * 1024
     )
 ]
+
+# Status de downloads dos modelos
+download_status: Dict[str, ModelDownloadStatus] = {}
+executor = ThreadPoolExecutor(max_workers=2)  # Máximo 2 downloads simultâneos
 
 def check_model_availability():
     """Verifica quais modelos estão disponíveis localmente"""
     for model in AVAILABLE_MODELS:
-        model_path = MODELS_DIR / f"whisper-{model.name}"
-        model.available = model_path.exists()
+        model_path = MODELS_DIR / model.name
+        # Verificar se o diretório do modelo existe e tem arquivos
+        if model_path.exists() and model_path.is_dir():
+            # Verificar se tem pelo menos config.json e model files
+            config_file = model_path / "config.json"
+            model_files = list(model_path.glob("*.bin")) + list(model_path.glob("*.pt"))
+            model.available = config_file.exists() and len(model_files) > 0
+        else:
+            model.available = False
+
+def format_bytes(bytes_count: int) -> str:
+    """Formata bytes em formato legível"""
+    for unit in ['B', 'KB', 'MB', 'GB']:
+        if bytes_count < 1024.0:
+            return f"{bytes_count:.1f} {unit}"
+        bytes_count /= 1024.0
+    return f"{bytes_count:.1f} TB"
+
+def format_time(seconds: float) -> str:
+    """Formata tempo em formato legível"""
+    if seconds < 60:
+        return f"{seconds:.0f}s"
+    elif seconds < 3600:
+        minutes = seconds / 60
+        return f"{minutes:.1f}m"
+    else:
+        hours = seconds / 3600
+        return f"{hours:.1f}h"
+
+async def download_model_file(url: str, dest_path: Path, model_name: str, file_index: int, total_files: int):
+    """Download de um arquivo específico do modelo"""
+    try:
+        response = urllib.request.urlopen(url)
+        total_size = int(response.headers.get('content-length', 0))
+        downloaded = 0
+        
+        with open(dest_path, 'wb') as f:
+            while True:
+                chunk = response.read(8192)
+                if not chunk:
+                    break
+                f.write(chunk)
+                downloaded += len(chunk)
+                
+                # Atualizar progresso
+                if model_name in download_status:
+                    file_progress = (downloaded / total_size) if total_size > 0 else 0
+                    overall_progress = ((file_index + file_progress) / total_files) * 100
+                    download_status[model_name].progress = overall_progress
+                    
+                    if total_size > 0:
+                        speed = downloaded / (1 if downloaded == 0 else 1)  # Simplificado
+                        download_status[model_name].download_speed = format_bytes(speed) + "/s"
+        
+        return True
+    except Exception as e:
+        logger.error(f"Erro ao baixar {url}: {str(e)}")
+        return False
+
+def download_model_worker(model_name: str):
+    """Worker para download de modelo em thread separada"""
+    try:
+        logger.info(f"Iniciando download do modelo {model_name}")
+        
+        # Atualizar status
+        download_status[model_name] = ModelDownloadStatus(
+            model_name=model_name,
+            status="downloading",
+            progress=0.0
+        )
+        
+        if model_name not in MODEL_URLS:
+            raise ValueError(f"Modelo {model_name} não encontrado")
+        
+        model_info = MODEL_URLS[model_name]
+        model_dir = MODELS_DIR / model_name
+        model_dir.mkdir(exist_ok=True)
+        
+        # Download dos arquivos usando faster-whisper que baixa automaticamente
+        try:
+            from faster_whisper import WhisperModel
+            
+            # Usar faster-whisper para baixar automaticamente
+            logger.info(f"Baixando modelo {model_name} via faster-whisper...")
+            model = WhisperModel(model_name, download_root=str(MODELS_DIR))
+            
+            download_status[model_name].status = "completed"
+            download_status[model_name].progress = 100.0
+            
+            # Atualizar disponibilidade
+            check_model_availability()
+            
+            logger.info(f"Download do modelo {model_name} concluído com sucesso")
+            
+        except Exception as e:
+            logger.error(f"Erro no download via faster-whisper: {str(e)}")
+            raise e
+            
+    except Exception as e:
+        logger.error(f"Erro no download do modelo {model_name}: {str(e)}")
+        download_status[model_name] = ModelDownloadStatus(
+            model_name=model_name,
+            status="error",
+            progress=0.0,
+            error_message=str(e)
+        )
 
 # Variável para armazenar o modelo carregado
 current_model = None
@@ -122,12 +406,30 @@ def load_whisper_model(model_name: str):
             return current_model
             
         logger.info(f"Carregando modelo {model_name}...")
-        model_path = MODELS_DIR / f"whisper-{model_name}"
+        
+        # Verificar se o modelo está disponível localmente
+        model_path = MODELS_DIR / f"models--openai--whisper-{model_name.replace('.', '-')}"
         
         if not model_path.exists():
-            # Baixar modelo se não existir
-            logger.info(f"Baixando modelo {model_name}...")
-            current_model = WhisperModel(model_name, download_root=str(MODELS_DIR))
+            # Tentar encontrar o modelo com naming alternativo
+            possible_paths = [
+                MODELS_DIR / f"whisper-{model_name}",
+                MODELS_DIR / model_name,
+                MODELS_DIR / f"models--openai--whisper-{model_name}"
+            ]
+            
+            model_path = None
+            for path in possible_paths:
+                if path.exists():
+                    model_path = path
+                    break
+            
+            if model_path is None:
+                # Baixar modelo se não existir
+                logger.info(f"Modelo {model_name} não encontrado localmente, baixando...")
+                current_model = WhisperModel(model_name, download_root=str(MODELS_DIR))
+            else:
+                current_model = WhisperModel(str(model_path))
         else:
             current_model = WhisperModel(str(model_path))
             
@@ -163,6 +465,139 @@ async def get_models():
     """Lista todos os modelos disponíveis"""
     check_model_availability()
     return AVAILABLE_MODELS
+
+@app.post("/models/{model_name}/download")
+async def download_model(model_name: str):
+    """Inicia o download de um modelo específico"""
+    
+    # Verificar se o modelo é válido
+    valid_models = [m.name for m in AVAILABLE_MODELS]
+    if model_name not in valid_models:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Modelo inválido: {model_name}. Modelos disponíveis: {', '.join(valid_models)}"
+        )
+    
+    # Verificar se já está sendo baixado
+    if model_name in download_status and download_status[model_name].status == "downloading":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Modelo {model_name} já está sendo baixado"
+        )
+    
+    # Verificar se já está disponível
+    model_info = next((m for m in AVAILABLE_MODELS if m.name == model_name), None)
+    if model_info and model_info.available:
+        return {"message": f"Modelo {model_name} já está disponível", "status": "already_available"}
+    
+    try:
+        # Iniciar download em thread separada
+        executor.submit(download_model_worker, model_name)
+        
+        return {
+            "message": f"Download do modelo {model_name} iniciado",
+            "status": "download_started"
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro ao iniciar download do modelo {model_name}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao iniciar download: {str(e)}"
+        )
+
+@app.get("/models/{model_name}/download/status")
+async def get_download_status(model_name: str):
+    """Obtém o status do download de um modelo"""
+    
+    if model_name not in download_status:
+        # Verificar se o modelo já está disponível
+        check_model_availability()
+        model_info = next((m for m in AVAILABLE_MODELS if m.name == model_name), None)
+        if model_info and model_info.available:
+            return ModelDownloadStatus(
+                model_name=model_name,
+                status="completed",
+                progress=100.0
+            )
+        else:
+            return ModelDownloadStatus(
+                model_name=model_name,
+                status="idle",
+                progress=0.0
+            )
+    
+    return download_status[model_name]
+
+@app.delete("/models/{model_name}")
+async def delete_model(model_name: str):
+    """Remove um modelo baixado"""
+    
+    # Verificar se o modelo é válido
+    valid_models = [m.name for m in AVAILABLE_MODELS]
+    if model_name not in valid_models:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Modelo inválido: {model_name}"
+        )
+    
+    try:
+        # Parar download se estiver em andamento
+        if model_name in download_status and download_status[model_name].status == "downloading":
+            download_status[model_name].status = "cancelled"
+        
+        # Remover arquivos do modelo
+        possible_paths = [
+            MODELS_DIR / f"models--openai--whisper-{model_name.replace('.', '-')}",
+            MODELS_DIR / f"whisper-{model_name}",
+            MODELS_DIR / model_name
+        ]
+        
+        removed_any = False
+        for model_path in possible_paths:
+            if model_path.exists():
+                if model_path.is_dir():
+                    shutil.rmtree(model_path)
+                else:
+                    model_path.unlink()
+                removed_any = True
+                logger.info(f"Removido: {model_path}")
+        
+        if not removed_any:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Modelo {model_name} não foi encontrado para remoção"
+            )
+        
+        # Limpar status de download
+        if model_name in download_status:
+            del download_status[model_name]
+        
+        # Atualizar disponibilidade
+        check_model_availability()
+        
+        # Limpar modelo carregado se for o mesmo
+        global current_model, current_model_name
+        if current_model_name == model_name:
+            current_model = None
+            current_model_name = None
+        
+        return {
+            "message": f"Modelo {model_name} removido com sucesso",
+            "status": "removed"
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro ao remover modelo {model_name}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao remover modelo: {str(e)}"
+        )
+
+@app.get("/models/downloads/status")
+async def get_all_download_status():
+    """Obtém o status de todos os downloads"""
+    return download_status
 
 @app.post("/transcribe", response_model=TranscriptionResponse)
 async def transcribe_audio(

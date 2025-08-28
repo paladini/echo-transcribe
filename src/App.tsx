@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Mic, Download, FileText, Settings as SettingsIcon, Copy, Check } from 'lucide-react';
 import { FileDropZone } from './components/FileDropZone';
 import { ModelSelector } from './components/ModelSelector';
@@ -59,32 +59,61 @@ function AppContent() {
   const [copyWithTimestamps, setCopyWithTimestamps] = useState(false);
   const [currentView, setCurrentView] = useState<'main' | 'settings'>('main');
 
-  const [models] = useState<ModelInfo[]>([
-    {
-      name: 'tiny',
-      size: '39 MB',
-      description: t('modelTiny'),
-      available: false
-    },
-    {
-      name: 'base',
-      size: '74 MB',
-      description: t('modelBase'),
-      available: true
-    },
-    {
-      name: 'small',
-      size: '244 MB',
-      description: t('modelSmall'),
-      available: false
-    },
-    {
-      name: 'medium',
-      size: '769 MB',
-      description: t('modelMedium'),
-      available: false
+  const [models, setModels] = useState<ModelInfo[]>([]);
+
+  // Fetch modelos do backend
+  const fetchModels = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/models`);
+      if (response.ok) {
+        const data = await response.json();
+        setModels(data);
+        
+        // Se o modelo selecionado não estiver disponível, selecionar o primeiro disponível
+        const selectedModelInfo = data.find((m: ModelInfo) => m.name === selectedModel);
+        if (!selectedModelInfo?.available) {
+          const firstAvailable = data.find((m: ModelInfo) => m.available);
+          if (firstAvailable) {
+            setSelectedModel(firstAvailable.name);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao buscar modelos:', error);
+      // Usar modelos padrão em caso de erro
+      setModels([
+        {
+          name: 'tiny',
+          size: '39 MB',
+          description: t('modelTiny'),
+          available: false
+        },
+        {
+          name: 'base',
+          size: '74 MB',
+          description: t('modelBase'),
+          available: true
+        },
+        {
+          name: 'small',
+          size: '244 MB',
+          description: t('modelSmall'),
+          available: false
+        },
+        {
+          name: 'medium',
+          size: '769 MB',
+          description: t('modelMedium'),
+          available: false
+        }
+      ]);
     }
-  ]);
+  }, [selectedModel, t]);
+
+  // Carregar modelos na inicialização
+  useEffect(() => {
+    fetchModels();
+  }, [fetchModels]);
 
   const handleFilesSelect = useCallback((files: File[]) => {
     setSelectedFiles(files);
@@ -103,18 +132,39 @@ function AppContent() {
 
   const handleDownloadModel = useCallback(async (model: string) => {
     try {
-      // Esta funcionalidade seria implementada para baixar modelos
-      console.log(`Downloading model: ${model}`);
-      // Por enquanto, apenas simular o download
-      alert(`Funcionalidade de download do modelo ${model} será implementada em breve.`);
+      console.log(`Iniciando download do modelo: ${model}`);
+      const response = await fetch(`${API_BASE_URL}/models/${model}/download`, {
+        method: 'POST'
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log(`Download iniciado para ${model}:`, result);
+      
+      // Atualizar lista de modelos após alguns segundos
+      setTimeout(() => {
+        fetchModels();
+      }, 2000);
+      
     } catch (error) {
       console.error('Error downloading model:', error);
-      setError('Erro ao baixar modelo');
+      setError(`Erro ao baixar modelo ${model}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
-  }, []);
+  }, [fetchModels]);
 
   const startBatchTranscription = useCallback(async () => {
     if (selectedFiles.length === 0) return;
+
+    // Verificar se o modelo selecionado está disponível
+    const selectedModelInfo = models.find(m => m.name === selectedModel);
+    if (!selectedModelInfo?.available) {
+      setError(`Modelo ${selectedModel} não está disponível. Por favor, baixe o modelo ou selecione outro.`);
+      return;
+    }
 
     setIsTranscribing(true);
     setError(null);
@@ -278,7 +328,7 @@ function AppContent() {
         setCurrentFileIndex(0);
       }, 2000);
     }
-  }, [selectedFiles, selectedModel]);
+  }, [selectedFiles, selectedModel, models]);
 
   const copyToClipboard = useCallback(async (result: BatchTranscriptionResult, index: number, withTimestamps: boolean = false) => {
     try {
