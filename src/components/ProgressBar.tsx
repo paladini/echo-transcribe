@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2, CheckCircle, AlertCircle, Clock, Zap } from 'lucide-react';
+import { Loader2, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ProgressBarProps {
@@ -7,7 +7,6 @@ interface ProgressBarProps {
   status?: 'idle' | 'processing' | 'completed' | 'error' | string;
   message?: string;
   showStats?: boolean;
-  estimatedTime?: number;
   currentFile?: string;
   totalFiles?: number;
   completedFiles?: number;
@@ -19,7 +18,6 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   status = 'processing',
   message,
   showStats = true,
-  estimatedTime,
   currentFile,
   totalFiles,
   completedFiles,
@@ -91,12 +89,6 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
             {totalFiles && completedFiles !== undefined && (
               <div className="flex items-center gap-1">
                 <span>{completedFiles + 1} de {totalFiles}</span>
-              </div>
-            )}
-            {estimatedTime && (
-              <div className="flex items-center gap-1">
-                <Zap className="w-3 h-3" />
-                <span>{estimatedTime}s restantes</span>
               </div>
             )}
             <span className="font-mono">{Math.round(progress)}%</span>

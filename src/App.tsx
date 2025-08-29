@@ -625,11 +625,6 @@ function AppContent() {
                   currentFile={selectedFiles[currentFileIndex]?.name}
                   totalFiles={selectedFiles.length}
                   completedFiles={currentFileIndex}
-                  estimatedTime={
-                    progress > 0 && progress < 100 
-                      ? Math.max(1, Math.round((100 - progress) * 0.5)) // Estimativa baseada no progresso
-                      : undefined
-                  }
                   message={
                     progress === 0 ? 'Iniciando transcrição...' :
                     progress < 30 ? 'Enviando arquivo...' :
