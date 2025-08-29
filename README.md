@@ -150,7 +150,7 @@ python main.py       # Start standalone backend server
 
 ### AI Models
 
-AudioScribe automatically downloads AI models as needed. Models are stored in:
+Echo-Transcribe automatically downloads AI models as needed. Models are stored in:
 
 - **Linux/macOS**: `~/.echo-transcribe/models/`
 - **Windows**: `%USERPROFILE%\\.echo-transcribe\\models\\`

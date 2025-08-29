@@ -1,4 +1,4 @@
-# AudioScribe Backend Dependencies
+# Echo-Transcribe Backend Dependencies
 
 # Core framework
 fastapi==0.104.1

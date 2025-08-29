@@ -149,7 +149,7 @@ python main.py       # Iniciar servidor backend standalone
 
 ### Modelos de IA
 
-O AudioScribe baixa automaticamente os modelos de IA conforme necessário. Os modelos ficam armazenados em:
+O Echo-Transcribe baixa automaticamente os modelos de IA conforme necessário. Os modelos ficam armazenados em:
 
 - **Linux/macOS**: `~/.echo-transcribe/models/`
 - **Windows**: `%USERPROFILE%\\.echo-transcribe\\models\\`
