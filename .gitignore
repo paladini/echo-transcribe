@@ -50,10 +50,10 @@ coverage/
 src-tauri/target/
 
 # Generated Tauri icons (if regenerated)
-src-tauri/icons/*.png
-src-tauri/icons/*.ico
-src-tauri/icons/*.icns
-!src-tauri/icons/icon.png
+# src-tauri/icons/*.png
+# src-tauri/icons/*.ico
+# src-tauri/icons/*.icns
+# !src-tauri/icons/icon.png
 
 # Tauri bundle outputs
 src-tauri/target/
