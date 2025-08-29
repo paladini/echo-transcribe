@@ -1,0 +1,75 @@
+name: 'flatpak-build'
+
+on:
+  push:
+    branches:
+      - release
+
+jobs:
+  build-flatpak:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf flatpak flatpak-builder
+
+      - name: install frontend dependencies
+        run: npm install
+
+      - name: Build Tauri app (Linux)
+        run: npm run tauri build
+
+      - name: Create Flatpak manifest
+        run: |
+          cat > flatpak-manifest.json <<EOL
+          {
+            "app-id": "com.paladini.EchoTranscribe",
+            "runtime": "org.freedesktop.Platform",
+            "runtime-version": "23.08",
+            "sdk": "org.freedesktop.Platform",
+            "command": "echo-transcribe",
+            "modules": [
+              {
+                "name": "echo-transcribe",
+                "buildsystem": "simple",
+                "build-commands": [
+                  "install -D src-tauri/target/release/echo-transcribe /app/bin/echo-transcribe"
+                ],
+                "sources": [
+                  {
+                    "type": "file",
+                    "path": "src-tauri/target/release/echo-transcribe"
+                  }
+                ]
+              }
+            ]
+          }
+          EOL
+
+      - name: Build Flatpak package
+        run: |
+          mkdir -p flatpak-build
+          flatpak-builder --force-clean flatpak-build flatpak-manifest.json
+
+      - name: Archive Flatpak bundle
+        run: |
+          tar czvf EchoTranscribe-flatpak.tar.gz flatpak-build
+
+      - name: Upload Flatpak artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EchoTranscribe-flatpak
+          path: EchoTranscribe-flatpak.tar.gz

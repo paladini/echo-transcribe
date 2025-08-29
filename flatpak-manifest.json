@@ -1,0 +1,22 @@
+{
+  "app-id": "com.paladini.EchoTranscribe",
+  "runtime": "org.freedesktop.Platform",
+  "runtime-version": "23.08",
+  "sdk": "org.freedesktop.Platform",
+  "command": "echo-transcribe",
+  "modules": [
+    {
+      "name": "echo-transcribe",
+      "buildsystem": "simple",
+      "build-commands": [
+        "install -D ./src-tauri/target/release/echo-transcribe /app/bin/echo-transcribe"
+      ],
+      "sources": [
+        {
+          "type": "file",
+          "path": "./src-tauri/target/release/echo-transcribe"
+        }
+      ]
+    }
+  ]
+}
