@@ -100,12 +100,15 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
               <div
                 key={model.name}
                 className={cn(
-                  "p-3 border rounded-lg cursor-pointer transition-all duration-200",
+                  "p-3 border rounded-lg transition-all duration-200",
+                  model.available ? "cursor-pointer" : "cursor-not-allowed opacity-60",
                   selectedModel === model.name
                     ? "border-primary bg-primary/5"
                     : "border-border hover:border-primary/50 hover:bg-muted/50"
                 )}
-                onClick={() => onModelSelect(model.name)}
+                onClick={() => {
+                  if (model.available) onModelSelect(model.name);
+                }}
               >
                 <div className="flex items-center justify-between">
                   <div className="space-y-1 flex-1">
