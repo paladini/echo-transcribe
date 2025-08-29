@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Save, Copy, Download, Edit3, Eye, FileText, Code, Clock } from 'lucide-react';
+import { Save, Copy, Download, Edit3, FileText, Code, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useSettings } from '../contexts/SettingsContext';
