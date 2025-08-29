@@ -821,7 +821,7 @@ function AppContent() {
       <footer className="border-t border-border/40 mt-16">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <p>EchoTranscribe v0.2.0 - {t('footerText')}</p>
+            <p>EchoTranscribe v0.1.0 - {t('footerText')}</p>
             <p>{t('footerMade')}</p>
           </div>
         </div>

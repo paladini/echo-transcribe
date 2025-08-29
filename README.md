@@ -202,7 +202,7 @@ Contributions are very welcome! Please read our [Contributing Guide](CONTRIBUTIN
 
 ## 📝 Roadmap
 
-- [x] **v0.2.0** ✅ **COMPLETED**
+- [x] **v0.1.0** ✅ **COMPLETED**
   - [x] Batch transcription support
   - [x] Automatic language detection
   - [x] Precise word-level timestamps
@@ -211,14 +211,12 @@ Contributions are very welcome! Please read our [Contributing Guide](CONTRIBUTIN
   - [x] Theme support (light/dark)
   - [x] Localization system (EN/PT/ES)
   
-- [ ] **v0.3.0**
-  - [ ] Plugin system
+- [ ] **v0.2.0**
   - [ ] Support for more AI models
-  - [ ] Cloud service integration (optional)
   - [ ] Timestamp interface improvements
   - [ ] Community language support
 
-- [ ] **v1.0.0**
+- [ ] **Future Versions**
   - [ ] Custom model training interface
   - [ ] Complete REST API
   - [ ] Audio streaming support

@@ -201,7 +201,7 @@ Contribuições são muito bem-vindas! Por favor, leia nosso [Guia de Contribui�
 
 ## 📝 Roadmap
 
-- [x] **v0.2.0** ✅ **CONCLUÍDO**
+- [x] **0.1.0** ✅ **CONCLUÍDO**
   - [x] Suporte a transcrição em lote
   - [x] Detecção automática de idioma
   - [x] Timestamps precisos por palavra
@@ -210,14 +210,12 @@ Contribuições são muito bem-vindas! Por favor, leia nosso [Guia de Contribui�
   - [x] Suporte a temas (claro/escuro)
   - [x] Sistema de localização (EN/PT/ES)
   
-- [ ] **v0.3.0**
-  - [ ] Plugin system
+- [ ] **v0.2.0**
   - [ ] Suporte a mais modelos de IA
-  - [ ] Integração com serviços de nuvem (opcional)
   - [ ] Melhorias na interface de timestamps
   - [ ] Suporte a mais idiomas da comunidade
 
-- [ ] **v1.0.0**
+- [ ] **Versões Futuras**
   - [ ] Interface para treinamento de modelos personalizados
   - [ ] API REST completa
   - [ ] Suporte a streaming de áudio

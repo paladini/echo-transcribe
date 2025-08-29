@@ -3,7 +3,7 @@
 This project was created and is maintained by:
 
 ## Main Author
-- **paladini** - [github.com/paladini](https://github.com/paladini)
+- **Fernando Paladini** - [github.com/paladini](https://github.com/paladini)
   - Project creator and main maintainer
   - Backend development (Python/FastAPI)
   - Frontend development (React/TypeScript)
