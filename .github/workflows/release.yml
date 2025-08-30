@@ -1,9 +1,10 @@
+
 name: 'publish'
 
 on:
   push:
-    branches:
-      - release
+    tags:
+      - 'v*'
 
 jobs:
   publish-tauri:
@@ -49,8 +50,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: EchoTranscribe-v__VERSION__
-          releaseName: 'EchoTranscribe v__VERSION__'
+          tagName: ${{ github.ref_name }}
+          releaseName: 'EchoTranscribe ${{ github.ref_name }}'
           releaseBody: 'See the assets below to download and install this version.'
           releaseDraft: true
           prerelease: false
