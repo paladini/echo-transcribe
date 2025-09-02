@@ -64,20 +64,25 @@ chmod +x start-backend.sh  # Linux/macOS only
 
 4. **Run in development mode**
 
-**Option A: Automatic (Recommended)**
-```bash
-npm run dev:full  # Starts both backend and frontend
-```
-
-**Option B: Manual (Better for debugging)**
+**Option A: Quick Start (Recommended)**
 ```bash
 # Terminal 1 - Start backend
 ./start-backend.sh        # Linux/macOS
 # or
 ./start-backend.bat       # Windows
 
+# Terminal 2 - Start frontend (Tauri v2)
+npm run tauri dev
+```
+
+**Option B: Manual setup**
+```bash
+# Terminal 1 - Start backend
+cd src-tauri/backend
+python main.py
+
 # Terminal 2 - Start frontend
-npm run tauri:dev
+npm run tauri dev
 ```
 
 5. **Verify setup**
@@ -134,17 +139,41 @@ Download the latest version from [Releases](https://github.com/paladini/echo-tra
 ## 📋 Available Commands
 
 ```bash
-# Development
-npm run dev          # Start frontend development server
-npm run tauri dev    # Start Tauri application in development mode
+# Development (Tauri v2)
+npm run tauri dev        # Start Tauri v2 application in development mode
+npm run dev             # Start frontend development server only (Vite)
 
-# Production
-npm run build        # Build frontend
-npm run tauri build  # Build complete application
+# Production (Tauri v2)
+npm run build           # Build frontend
+npm run tauri build     # Build complete application (generates executable)
 
 # Backend (Python)
 cd src-tauri/backend
-python main.py       # Start standalone backend server
+python main.py          # Start standalone backend server
+
+# Other useful commands
+npm run preview         # Preview built frontend
+npm run tauri --version # Check Tauri CLI version
+```
+
+### 🏗️ **Building and Running Executable**
+
+After running `npm run tauri build`, you can find and execute the generated files:
+
+```bash
+# Direct executable
+./src-tauri/target/release/echo-transcribe
+
+# AppImage (Recommended for distribution)
+chmod +x src-tauri/target/release/bundle/appimage/EchoTranscribe_0.1.0_amd64.AppImage
+./src-tauri/target/release/bundle/appimage/EchoTranscribe_0.1.0_amd64.AppImage
+
+# Install .deb package (Ubuntu/Debian)
+sudo dpkg -i src-tauri/target/release/bundle/deb/EchoTranscribe_0.1.0_amd64.deb
+echo-transcribe  # Run from anywhere after installation
+
+# Install .rpm package (Red Hat/Fedora)
+sudo rpm -i src-tauri/target/release/bundle/rpm/EchoTranscribe-0.1.0-1.x86_64.rpm
 ```
 
 ## 🔧 Configuration
@@ -170,6 +199,15 @@ Echo-Transcribe automatically downloads AI models as needed. Models are stored i
 ## 🐛 Troubleshooting
 
 ### Common Issues
+
+**Error: "Load Failed"**
+- This usually means the Python backend isn't running
+- Make sure Python 3.8+ is installed on your system
+- The application will automatically install Python dependencies on first run
+- If the problem persists, try:
+  1. Close and reopen the application
+  2. Check if port 8000 is available
+  3. Install dependencies manually: `cd src-tauri/backend && pip install -r requirements.txt`
 
 **Error: "Model not found"**
 - The model will be downloaded automatically on first run

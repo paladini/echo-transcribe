@@ -468,11 +468,30 @@ async def shutdown_event():
         logger.warning(f"Erro ao limpar arquivos temporários: {str(e)}")
 
 if __name__ == "__main__":
-    # Configuração para desenvolvimento
+    # Verificar se todas as dependências estão instaladas
+    try:
+        import faster_whisper
+        import torch
+        logger.info("All dependencies are installed")
+    except ImportError as e:
+        logger.error(f"Missing dependency: {e}")
+        logger.error("Please install dependencies with: pip install -r requirements.txt")
+        exit(1)
+    
+    # Criar diretório de modelos se não existir
+    MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    TEMP_DIR.mkdir(parents=True, exist_ok=True)
+    
+    logger.info("Starting EchoTranscribe backend server...")
+    logger.info("Backend will be available at: http://127.0.0.1:8000")
+    logger.info("API docs will be available at: http://127.0.0.1:8000/docs")
+    
+    # Configuração para produção e desenvolvimento
     uvicorn.run(
         "main:app",
         host="127.0.0.1",
         port=8000,
-        reload=True,
-        log_level="info"
+        reload=False,  # Desabilitado para produção
+        log_level="info",
+        access_log=True
     )

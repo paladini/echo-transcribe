@@ -34,6 +34,34 @@ interface BatchTranscriptionResult {
 
 const API_BASE_URL = 'http://127.0.0.1:8000';
 
+// Função para verificar se o backend está rodando
+const checkBackendHealth = async (): Promise<boolean> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/health`, {
+      method: 'GET',
+      timeout: 5000,
+    } as RequestInit);
+    return response.ok;
+  } catch (error) {
+    console.log('Backend health check failed:', error);
+    return false;
+  }
+};
+
+// Função para aguardar o backend ficar disponível
+const waitForBackend = async (maxRetries: number = 20, delay: number = 1000): Promise<boolean> => {
+  for (let i = 0; i < maxRetries; i++) {
+    console.log(`Checking backend availability... Attempt ${i + 1}/${maxRetries}`);
+    if (await checkBackendHealth()) {
+      console.log('Backend is available!');
+      return true;
+    }
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
+  console.log('Backend is not available after maximum retries');
+  return false;
+};
+
 // Componente principal que usa as configurações
 function AppContent() {
   // Usar try-catch para capturar erros do useSettings
@@ -147,28 +175,45 @@ function AppContent() {
     };
 
     try {
+      // Verificar se o backend está disponível
+      setError(null);
+      setProgress(5);
+      
+      console.log('Checking if backend is available...');
+      const backendAvailable = await waitForBackend(10, 2000); // 10 tentativas, 2s cada
+      
+      if (!backendAvailable) {
+        throw new Error(
+          'Backend não está disponível. ' +
+          'Certifique-se de que o Python está instalado e que as dependências foram instaladas corretamente. ' +
+          'Tente fechar e abrir o aplicativo novamente.'
+        );
+      }
+      
+      console.log('Backend is available, starting transcription...');
+      
       // Se apenas um arquivo, usar endpoint individual
       if (selectedFiles.length === 1) {
         const file = selectedFiles[0];
         setCurrentFileIndex(0);
         
-        // Simular progresso de upload (0-20%)
-        await simulateProgress(20, 1000);
+        // Simular progresso de upload (5-25%)
+        await simulateProgress(25, 1000);
         
         const formData = new FormData();
         formData.append('file', file);
         formData.append('model', selectedModel);
         formData.append('auto_detect_language', 'true');
 
-        // Simular progresso de início do processamento (20-30%)
-        await simulateProgress(30, 500);
+        // Simular progresso de início do processamento (25-35%)
+        await simulateProgress(35, 500);
 
         const response = await fetch(`${API_BASE_URL}/transcribe`, {
           method: 'POST',
           body: formData,
         });
 
-        // Simular progresso durante a espera da resposta (30-90%)
+        // Simular progresso durante a espera da resposta (35-90%)
         const progressPromise = simulateProgress(90, 3000);
         
         if (!response.ok) {
@@ -203,8 +248,8 @@ function AppContent() {
           setCurrentFileIndex(i);
           
           const fileProgress = {
-            start: (i / totalFiles) * 100,
-            end: ((i + 1) / totalFiles) * 100
+            start: ((i / totalFiles) * 95) + 5, // Começa depois da verificação do backend (5%)
+            end: (((i + 1) / totalFiles) * 95) + 5
           };
           
           try {

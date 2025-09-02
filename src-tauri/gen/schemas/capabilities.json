@@ -1,0 +1,1 @@
+{"main":{"identifier":"main","description":"enables the main features","local":true,"windows":["main"],"permissions":["core:default","dialog:default","fs:default","http:default","shell:default"]},"migrated":{"identifier":"migrated","description":"permissions that were migrated from v1","local":true,"windows":["main"],"permissions":["core:default"]}}
