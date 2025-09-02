@@ -1,0 +1,12 @@
+{
+  "identifier": "main",
+  "description": "enables the main features",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "dialog:default",
+    "fs:default",
+    "http:default",
+    "shell:default"
+  ]
+}
