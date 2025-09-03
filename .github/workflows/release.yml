@@ -7,7 +7,32 @@ on:
       - 'v*'
 
 jobs:
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
+      
+      - name: install frontend dependencies
+        run: npm install
+      
+      - name: build frontend
+        run: npm run build
+      
+      - name: upload frontend artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist/
+          retention-days: 1
+
   publish-tauri:
+    needs: build-frontend
     permissions:
       contents: write
     strategy:
@@ -27,15 +52,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: download frontend artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist/
+
       - name: setup node
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
+          cache: 'npm'
 
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
 
       - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04'
