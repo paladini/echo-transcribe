@@ -438,11 +438,11 @@ function AppContent() {
       console.log('Could not get downloads path from Tauri:', error);
       // Fallback para caminho padrão
       if (typeof navigator !== 'undefined' && navigator.userAgent.includes('Linux')) {
-        downloadsPath = `${process.env.HOME || '/home/user'}/Downloads`;
+        downloadsPath = '/home/user/Downloads';
       } else if (typeof navigator !== 'undefined' && navigator.userAgent.includes('Windows')) {
-        downloadsPath = `${process.env.USERPROFILE || 'C:\\Users\\User'}\\Downloads`;
+        downloadsPath = 'C:\\Users\\User\\Downloads';
       } else if (typeof navigator !== 'undefined' && navigator.userAgent.includes('Mac')) {
-        downloadsPath = `${process.env.HOME || '/Users/user'}/Downloads`;
+        downloadsPath = '/Users/user/Downloads';
       } else {
         downloadsPath = 'Downloads folder';
       }
