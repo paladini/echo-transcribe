@@ -89,6 +89,23 @@ export const translations: Record<Language, Translation> = {
     // Settings info
     settingsInfo: 'Your settings are automatically saved in the browser and will be kept the next time you open the application.',
     
+    // Download notifications
+    fileSaved: 'File saved successfully',
+    viewFolder: 'View Folder',
+    savedTo: 'Saved to',
+    downloadLocation: 'Downloads folder',
+    errorOpeningFolder: 'Could not open Downloads folder automatically. You can find your files in the system Downloads folder.',
+    
+    // Model download messages
+    modelDownloadFeature: 'Model download feature will be implemented soon.',
+    modelDownloadError: 'Error downloading model',
+    copyError: 'Error copying text. Try selecting and copying manually.',
+    exportEmptyError: 'Error: Empty content to export. Check if transcription was completed.',
+    downloadErrorWithClipboard: 'Download error. Content was copied to clipboard.\n\nYou can paste it into a text editor and save as',
+    downloadAndCopyError: 'Download and copy error. Copy the text manually from the interface and save as',
+    exportError: 'Error exporting file',
+    unknownError: 'Unknown error',
+    
     // Common
     save: 'Save',
     cancel: 'Cancel',
@@ -182,6 +199,23 @@ export const translations: Record<Language, Translation> = {
     // Settings info
     settingsInfo: 'Suas configurações são salvas automaticamente no navegador e serão mantidas na próxima vez que você abrir a aplicação.',
     
+    // Download notifications
+    fileSaved: 'Arquivo salvo com sucesso',
+    viewFolder: 'Ver Pasta',
+    savedTo: 'Salvo em',
+    downloadLocation: 'Pasta Downloads',
+    errorOpeningFolder: 'Não foi possível abrir a pasta Downloads automaticamente. Você pode encontrar seus arquivos na pasta Downloads do sistema.',
+    
+    // Model download messages
+    modelDownloadFeature: 'Funcionalidade de download do modelo será implementada em breve.',
+    modelDownloadError: 'Erro ao baixar modelo',
+    copyError: 'Erro ao copiar texto. Tente selecionar e copiar manualmente.',
+    exportEmptyError: 'Erro: Conteúdo vazio para exportar. Verifique se a transcrição foi concluída.',
+    downloadErrorWithClipboard: 'Erro no download. O conteúdo foi copiado para a área de transferência.\n\nVocê pode colar em um editor de texto e salvar como',
+    downloadAndCopyError: 'Erro no download e na cópia. Copie o texto manualmente da interface e salve como',
+    exportError: 'Erro ao exportar arquivo',
+    unknownError: 'Erro desconhecido',
+    
     // Common
     save: 'Salvar',
     cancel: 'Cancelar',
@@ -274,6 +308,23 @@ export const translations: Record<Language, Translation> = {
     
     // Settings info
     settingsInfo: 'Tu configuración se guarda automáticamente en el navegador y se mantendrá la próxima vez que abras la aplicación.',
+    
+    // Download notifications
+    fileSaved: 'Archivo guardado con éxito',
+    viewFolder: 'Ver Carpeta',
+    savedTo: 'Guardado en',
+    downloadLocation: 'Carpeta de Descargas',
+    errorOpeningFolder: 'No se pudo abrir la carpeta de Descargas automáticamente. Puedes encontrar tus archivos en la carpeta de Descargas del sistema.',
+    
+    // Model download messages
+    modelDownloadFeature: 'La funcionalidad de descarga del modelo se implementará pronto.',
+    modelDownloadError: 'Error al descargar modelo',
+    copyError: 'Error al copiar texto. Intenta seleccionar y copiar manualmente.',
+    exportEmptyError: 'Error: Contenido vacío para exportar. Verifica si la transcripción fue completada.',
+    downloadErrorWithClipboard: 'Error en la descarga. El contenido fue copiado al portapapeles.\n\nPuedes pegarlo en un editor de texto y guardar como',
+    downloadAndCopyError: 'Error en la descarga y copia. Copia el texto manualmente de la interfaz y guarda como',
+    exportError: 'Error al exportar archivo',
+    unknownError: 'Error desconocido',
     
     // Common
     save: 'Guardar',

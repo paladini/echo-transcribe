@@ -6,6 +6,114 @@ use std::thread;
 use std::time::Duration;
 use std::env;
 use std::path::PathBuf;
+use tauri::command;
+
+#[command]
+fn get_downloads_path() -> Result<String, String> {
+    // Tentar obter o caminho da pasta Downloads do usuário
+    if let Some(home_dir) = dirs::home_dir() {
+        let downloads_path = home_dir.join("Downloads");
+        if downloads_path.exists() {
+            return Ok(downloads_path.to_string_lossy().to_string());
+        }
+    }
+    
+    // Fallback para diferentes sistemas
+    #[cfg(target_os = "linux")]
+    {
+        if let Ok(xdg_downloads) = env::var("XDG_DOWNLOAD_DIR") {
+            let path = PathBuf::from(xdg_downloads);
+            if path.exists() {
+                return Ok(path.to_string_lossy().to_string());
+            }
+        }
+    }
+    
+    #[cfg(target_os = "windows")]
+    {
+        if let Some(downloads) = dirs::download_dir() {
+            return Ok(downloads.to_string_lossy().to_string());
+        }
+    }
+    
+    #[cfg(target_os = "macos")]
+    {
+        if let Some(downloads) = dirs::download_dir() {
+            return Ok(downloads.to_string_lossy().to_string());
+        }
+    }
+    
+    Err("Could not determine downloads folder".to_string())
+}
+
+#[command]
+fn open_downloads_folder() -> Result<String, String> {
+    // Obter o caminho da pasta Downloads
+    let downloads_path = get_downloads_path()?;
+    
+    // Abrir a pasta usando comando específico do sistema
+    #[cfg(target_os = "linux")]
+    {
+        let result = Command::new("xdg-open")
+            .arg(&downloads_path)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
+        
+        match result {
+            Ok(status) if status.success() => Ok("Pasta Downloads aberta com sucesso".to_string()),
+            _ => {
+                // Tentar com nautilus (GNOME)
+                let nautilus_result = Command::new("nautilus")
+                    .arg(&downloads_path)
+                    .stdout(Stdio::null())
+                    .stderr(Stdio::null())
+                    .status();
+                
+                match nautilus_result {
+                    Ok(status) if status.success() => Ok("Pasta Downloads aberta com sucesso".to_string()),
+                    _ => {
+                        // Tentar com dolphin (KDE)
+                        let dolphin_result = Command::new("dolphin")
+                            .arg(&downloads_path)
+                            .stdout(Stdio::null())
+                            .stderr(Stdio::null())
+                            .status();
+                        
+                        match dolphin_result {
+                            Ok(status) if status.success() => Ok("Pasta Downloads aberta com sucesso".to_string()),
+                            _ => Err("Não foi possível abrir o gerenciador de arquivos".to_string())
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    #[cfg(target_os = "windows")]
+    {
+        let result = Command::new("explorer")
+            .arg(&downloads_path)
+            .status();
+        
+        match result {
+            Ok(status) if status.success() => Ok("Pasta Downloads aberta com sucesso".to_string()),
+            _ => Err("Não foi possível abrir o Explorer".to_string())
+        }
+    }
+    
+    #[cfg(target_os = "macos")]
+    {
+        let result = Command::new("open")
+            .arg(&downloads_path)
+            .status();
+        
+        match result {
+            Ok(status) if status.success() => Ok("Pasta Downloads aberta com sucesso".to_string()),
+            _ => Err("Não foi possível abrir o Finder".to_string())
+        }
+    }
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -26,7 +134,7 @@ pub fn run() {
             
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![])
+        .invoke_handler(tauri::generate_handler![get_downloads_path, open_downloads_folder])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
