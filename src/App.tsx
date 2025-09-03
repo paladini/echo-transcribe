@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { Mic, Download, FileText, Settings as SettingsIcon, Copy, Check } from 'lucide-react';
+import { Mic, Download, FileText, Settings as SettingsIcon, Copy, Check, FolderOpen } from 'lucide-react';
+import { invoke } from '@tauri-apps/api/core';
 import { FileDropZone } from './components/FileDropZone';
 import { ModelSelector } from './components/ModelSelector';
 import { ProgressBar } from './components/ProgressBar';
@@ -84,6 +85,13 @@ function AppContent() {
   const [currentFileIndex, setCurrentFileIndex] = useState(0);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [downloadStatus, setDownloadStatus] = useState<{[key: string]: 'downloading' | 'success' | 'error'}>({});
+  const [downloadNotifications, setDownloadNotifications] = useState<{
+    id: string;
+    filename: string;
+    format: string;
+    filePath?: string;
+    timestamp: number;
+  }[]>([]);
   const [copyWithTimestamps, setCopyWithTimestamps] = useState(false);
   const [currentView, setCurrentView] = useState<'main' | 'settings'>('main');
 
@@ -134,12 +142,12 @@ function AppContent() {
       // Esta funcionalidade seria implementada para baixar modelos
       console.log(`Downloading model: ${model}`);
       // Por enquanto, apenas simular o download
-      alert(`Funcionalidade de download do modelo ${model} será implementada em breve.`);
+      alert(t('modelDownloadFeature'));
     } catch (error) {
       console.error('Error downloading model:', error);
-      setError('Erro ao baixar modelo');
+      setError(t('modelDownloadError'));
     }
-  }, []);
+  }, [t]);
 
   const startBatchTranscription = useCallback(async () => {
     if (selectedFiles.length === 0) return;
@@ -378,8 +386,82 @@ function AppContent() {
       console.log('Texto copiado para a área de transferência', withTimestamps ? 'no formato SRT' : '');
     } catch (error) {
       console.error('Erro ao copiar texto:', error);
-      alert('Erro ao copiar texto. Tente selecionar e copiar manualmente.');
+      alert(t('copyError'));
     }
+  }, [t]);
+
+  const openDownloadsFolder = useCallback(async () => {
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const result = await invoke('open_downloads_folder') as string;
+      console.log(result); // Log de sucesso
+    } catch (error) {
+      console.error('Erro ao abrir pasta Downloads:', error);
+      // Usar uma notificação mais elegante ao invés de alert
+      // Criar um elemento de notificação temporário
+      const notification = document.createElement('div');
+      notification.innerHTML = `
+        <div style="
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: #ef4444;
+          color: white;
+          padding: 12px 20px;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          z-index: 10000;
+          font-family: system-ui, -apple-system, sans-serif;
+          max-width: 300px;
+        ">
+          <strong>${t('error')}:</strong> ${t('errorOpeningFolder')}
+        </div>
+      `;
+      document.body.appendChild(notification);
+      
+      // Remover a notificação após 5 segundos
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 5000);
+    }
+  }, [t]);
+
+  const showDownloadNotification = useCallback(async (filename: string, format: string) => {
+    let downloadsPath = '';
+    
+    try {
+      // Tentar obter o caminho da pasta Downloads via Tauri
+      downloadsPath = await invoke('get_downloads_path') as string;
+    } catch (error) {
+      console.log('Could not get downloads path from Tauri:', error);
+      // Fallback para caminho padrão
+      if (typeof navigator !== 'undefined' && navigator.userAgent.includes('Linux')) {
+        downloadsPath = `${process.env.HOME || '/home/user'}/Downloads`;
+      } else if (typeof navigator !== 'undefined' && navigator.userAgent.includes('Windows')) {
+        downloadsPath = `${process.env.USERPROFILE || 'C:\\Users\\User'}\\Downloads`;
+      } else if (typeof navigator !== 'undefined' && navigator.userAgent.includes('Mac')) {
+        downloadsPath = `${process.env.HOME || '/Users/user'}/Downloads`;
+      } else {
+        downloadsPath = 'Downloads folder';
+      }
+    }
+    
+    const notification = {
+      id: Date.now().toString(),
+      filename,
+      format,
+      filePath: downloadsPath,
+      timestamp: Date.now()
+    };
+    
+    setDownloadNotifications(prev => [...prev, notification]);
+    
+    // Remove notification after 8 seconds (increased for better readability)
+    setTimeout(() => {
+      setDownloadNotifications(prev => prev.filter(n => n.id !== notification.id));
+    }, 8000);
   }, []);
 
   const exportSingleResult = useCallback(async (result: BatchTranscriptionResult, format: 'txt' | 'srt' | 'json') => {
@@ -438,7 +520,7 @@ function AppContent() {
       // Verificar se o conteúdo não está vazio
       if (!content || content.trim().length === 0) {
         setDownloadStatus(prev => ({ ...prev, [downloadKey]: 'error' }));
-        alert('Erro: Conteúdo vazio para exportar. Verifique se a transcrição foi concluída.');
+        alert(t('exportEmptyError'));
         return;
       }
 
@@ -464,6 +546,9 @@ function AppContent() {
           
           setDownloadStatus(prev => ({ ...prev, [downloadKey]: 'success' }));
           console.log('Arquivo salvo com sucesso via File System Access API:', filename);
+          
+          // Mostrar notificação de sucesso
+          showDownloadNotification(filename, format.toUpperCase());
           
           // Remover status após 3 segundos
           setTimeout(() => {
@@ -512,6 +597,9 @@ function AppContent() {
         setDownloadStatus(prev => ({ ...prev, [downloadKey]: 'success' }));
         console.log('Download iniciado com sucesso via método fallback:', filename);
         
+        // Mostrar notificação de sucesso
+        showDownloadNotification(filename, format.toUpperCase());
+        
         // Remover status após 3 segundos
         setTimeout(() => {
           setDownloadStatus(prev => {
@@ -528,10 +616,10 @@ function AppContent() {
         // Tentar copiar para clipboard como último recurso
         try {
           await navigator.clipboard.writeText(content);
-          alert(`Erro no download. O conteúdo foi copiado para a área de transferência.\n\nVocê pode colar em um editor de texto e salvar como "${filename}"`);
+          alert(`${t('downloadErrorWithClipboard')} "${filename}"`);
         } catch (clipboardError) {
           console.error('Erro no clipboard também:', clipboardError);
-          alert(`Erro no download e na cópia. Copie o texto manualmente da interface e salve como "${filename}"`);
+          alert(`${t('downloadAndCopyError')} "${filename}"`);
         }
         
         // Remover status de erro após 5 segundos
@@ -547,7 +635,7 @@ function AppContent() {
     } catch (error) {
       console.error('Erro ao exportar arquivo:', error);
       setDownloadStatus(prev => ({ ...prev, [downloadKey]: 'error' }));
-      alert('Erro ao exportar arquivo: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
+      alert(t('exportError') + ': ' + (error instanceof Error ? error.message : t('unknownError')));
       
       // Remover status de erro após 5 segundos
       setTimeout(() => {
@@ -558,7 +646,7 @@ function AppContent() {
         });
       }, 5000);
     }
-  }, []);
+  }, [t]);
 
   // Função para exportar todos os resultados em lote
 
@@ -861,6 +949,49 @@ function AppContent() {
           </div>
         </div>
       </main>
+
+      {/* Download Notifications - Estilo Apple */}
+      <div className="fixed top-4 right-4 z-50 space-y-2">
+        {downloadNotifications.map((notification) => (
+          <div
+            key={notification.id}
+            className="bg-background/95 backdrop-blur-md border border-border rounded-lg p-4 shadow-lg min-w-[350px] max-w-[450px] animate-in slide-in-from-right-5"
+          >
+            <div className="flex items-start justify-between space-x-3">
+              <div className="flex items-center space-x-3 flex-1 min-w-0">
+                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Check className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">
+                    {t('fileSaved')}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate mb-1">
+                    {notification.filename}
+                  </p>
+                  {notification.filePath && (
+                    <p className="text-xs text-muted-foreground/80 truncate">
+                      <span className="font-medium">{t('savedTo')}:</span> {notification.filePath}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center space-x-1 flex-shrink-0">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={openDownloadsFolder}
+                  className="h-7 px-2 text-xs"
+                  title={t('viewFolder')}
+                >
+                  <FolderOpen className="w-3 h-3 mr-1" />
+                  {t('viewFolder')}
+                </Button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
 
       {/* Footer */}
       <footer className="border-t border-border/40 mt-16">
