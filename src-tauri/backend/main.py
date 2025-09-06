@@ -9,6 +9,7 @@ import os
 import asyncio
 import tempfile
 import shutil
+import socket
 from pathlib import Path
 from typing import List, Optional
 import uvicorn
@@ -22,6 +23,16 @@ import logging
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+def find_available_port(start_port=8000, max_attempts=10):
+    for port in range(start_port, start_port + max_attempts):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(('127.0.0.1', port))
+                return port
+        except OSError:
+            continue
+    return None
 
 # Inicializar FastAPI
 app = FastAPI(
@@ -488,26 +499,72 @@ if __name__ == "__main__":
     try:
         import faster_whisper
         import torch
-        logger.info("All dependencies are installed")
+        logger.info("✅ All dependencies are installed")
     except ImportError as e:
-        logger.error(f"Missing dependency: {e}")
+        logger.error(f"❌ Missing dependency: {e}")
         logger.error("Please install dependencies with: pip install -r requirements.txt")
         exit(1)
     
+    # Verificar disponibilidade do PyTorch
+    try:
+        if torch.cuda.is_available():
+            logger.info("🚀 GPU (CUDA) available for acceleration")
+        else:
+            logger.info("⚠️ Using CPU only (no CUDA available)")
+    except Exception as e:
+        logger.warning(f"Could not check CUDA availability: {e}")
+    
     # Criar diretório de modelos se não existir
-    MODELS_DIR.mkdir(parents=True, exist_ok=True)
-    TEMP_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        MODELS_DIR.mkdir(parents=True, exist_ok=True)
+        TEMP_DIR.mkdir(parents=True, exist_ok=True)
+        logger.info("📁 Directories created successfully")
+    except Exception as e:
+        logger.error(f"❌ Could not create directories: {e}")
+        exit(1)
     
-    logger.info("Starting EchoTranscribe backend server...")
-    logger.info("Backend will be available at: http://127.0.0.1:8000")
-    logger.info("API docs will be available at: http://127.0.0.1:8000/docs")
+    logger.info("🎙️ Starting EchoTranscribe backend server...")
     
-    # Configuração para produção e desenvolvimento
-    uvicorn.run(
-        "main:app",
-        host="127.0.0.1",
-        port=8000,
-        reload=False,  # Desabilitado para produção
-        log_level="info",
-        access_log=True
-    )
+    # Encontrar porta disponível
+    port = find_available_port(8000, 5)  # Tentar portas 8000-8004
+    if port is None:
+        logger.error("❌ No available ports found in range 8000-8004")
+        exit(1)
+    
+    if port != 8000:
+        logger.warning(f"⚠️ Port 8000 is busy, using port {port} instead")
+    
+    # Salvar porta para o frontend
+    try:
+        port_file = Path(__file__).parent / "backend_port.txt"
+        port_file.write_text(str(port))
+        logger.info(f"📝 Port {port} saved to backend_port.txt")
+    except Exception as e:
+        logger.warning(f"Could not save port file: {e}")
+    
+    logger.info(f"🌐 Backend will be available at: http://127.0.0.1:{port}")
+    logger.info(f"📚 API docs will be available at: http://127.0.0.1:{port}/docs")
+    
+    try:
+        # Configuração para produção e desenvolvimento
+        uvicorn.run(
+            "main:app",
+            host="127.0.0.1",
+            port=port,
+            reload=False,  # Desabilitado para produção
+            log_level="info",
+            access_log=True
+        )
+    except OSError as e:
+        if "Address already in use" in str(e) or "address already in use" in str(e):
+            logger.error("❌ Port 8000 is already in use. Another instance may be running.")
+            logger.error("💡 Try closing other instances or wait a few seconds and try again.")
+            exit(2)  # Exit code 2 for port conflict
+        else:
+            logger.error(f"❌ Failed to start server (OSError): {e}")
+            exit(1)
+    except KeyboardInterrupt:
+        logger.info("👋 Server stopped by user")
+    except Exception as e:
+        logger.error(f"❌ Failed to start server: {e}")
+        exit(1)

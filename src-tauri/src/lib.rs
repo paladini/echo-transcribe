@@ -129,8 +129,8 @@ pub fn run() {
                 start_python_server(&app_handle);
             });
             
-            // Aguardar o servidor iniciar
-            thread::sleep(Duration::from_secs(5));
+            // Aguardar mais tempo para bibliotecas pesadas carregarem
+            thread::sleep(Duration::from_secs(10));
             
             Ok(())
         })
@@ -148,12 +148,12 @@ fn start_python_server(_app_handle: &tauri::AppHandle) {
     
     // Tentar diferentes caminhos para o backend
     let possible_backend_paths = vec![
+        env::current_dir().unwrap_or_default().join("src-tauri/backend"), // Dev: absoluto (primeiro)
+        PathBuf::from("src-tauri/backend"),   // Dev: relativo
         exe_dir.join("backend"),              // Executável: ./backend/
         exe_dir.join("../backend"),           // Executável: ../backend/
         exe_dir.join("../../backend"),        // Executável: ../../backend/
         exe_dir.join("src-tauri/backend"),    // Dev: src-tauri/backend/
-        PathBuf::from("src-tauri/backend"),   // Dev: relativo
-        env::current_dir().unwrap_or_default().join("src-tauri/backend"), // Dev: absoluto
     ];
     
     let mut backend_path = None;
@@ -208,6 +208,7 @@ fn start_python_server(_app_handle: &tauri::AppHandle) {
                 }
                 Err(e) => {
                     eprintln!("Failed to start {} with {}: {:?}", script, python_cmd, e);
+                    eprintln!("Make sure Python is installed and {} is executable", python_cmd);
                     continue;
                 }
             };
@@ -216,7 +217,15 @@ fn start_python_server(_app_handle: &tauri::AppHandle) {
                 // Aguardar o processo em background
                 thread::spawn(move || {
                     match child.wait() {
-                        Ok(status) => println!("Python server exited with status: {:?}", status),
+                        Ok(status) => {
+                            match status.code() {
+                                Some(0) => println!("Python server exited normally (code 0)"),
+                                Some(1) => eprintln!("Python server failed with error code 1 (general error)"),
+                                Some(2) => eprintln!("Python server failed with error code 2 (port 8000 already in use)"),
+                                Some(code) => eprintln!("Python server exited with code: {}", code),
+                                None => eprintln!("Python server terminated by signal"),
+                            }
+                        },
                         Err(e) => eprintln!("Error waiting for Python server: {:?}", e),
                     }
                 });

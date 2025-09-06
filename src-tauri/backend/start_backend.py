@@ -55,8 +55,10 @@ def check_dependencies():
     for package in required_packages:
         try:
             __import__(package.replace("-", "_"))
+            print(f"✅ {package} encontrado")
         except ImportError:
             missing.append(package)
+            print(f"❌ {package} não encontrado")
     
     if missing:
         print(f"📦 Pacotes em falta: {', '.join(missing)}")
@@ -74,10 +76,23 @@ def start_backend():
         return False
     
     print("🚀 Iniciando servidor backend...")
+    print("⏳ Aguarde, carregando bibliotecas pesadas (torch, faster-whisper)...")
+    
     try:
         # Executar o servidor
-        subprocess.run([sys.executable, str(main_file)])
-        return True
+        result = subprocess.run([sys.executable, str(main_file)])
+        
+        if result.returncode == 0:
+            print("✅ Servidor encerrado normalmente")
+            return True
+        elif result.returncode == 2:
+            print("❌ Porta 8000 já está em uso!")
+            print("💡 Aguarde alguns segundos ou feche outras instâncias do EchoTranscribe")
+            return False
+        else:
+            print(f"❌ Servidor encerrou com erro (código {result.returncode})")
+            return False
+            
     except KeyboardInterrupt:
         print("\n⏹️  Servidor interrompido pelo usuário")
         return True
