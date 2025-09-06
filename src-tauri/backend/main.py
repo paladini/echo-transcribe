@@ -12,9 +12,10 @@ import shutil
 from pathlib import Path
 from typing import List, Optional
 import uvicorn
-from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import logging
 
@@ -28,6 +29,21 @@ app = FastAPI(
     description="API para transcrição de áudio usando modelos locais",
     version="0.1.0"
 )
+
+# Servir arquivos estáticos do frontend React
+FRONTEND_DIR = Path(__file__).parent / "frontend"
+if FRONTEND_DIR.exists():
+    app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
+
+@app.middleware("http")
+async def spa_fallback(request: Request, call_next):
+    # Se não for rota de API e não existir arquivo, retorna index.html
+    response = await call_next(request)
+    if response.status_code == 404 and not request.url.path.startswith("/api"):
+        index_path = FRONTEND_DIR / "index.html"
+        if index_path.exists():
+            return FileResponse(str(index_path))
+    return response
 
 # Configurar CORS
 app.add_middleware(
