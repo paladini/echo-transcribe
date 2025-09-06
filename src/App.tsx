@@ -35,16 +35,54 @@ interface BatchTranscriptionResult {
 
 const API_BASE_URL = 'http://127.0.0.1:8000';
 
-// Função para verificar se o backend está rodando
-const checkBackendHealth = async (): Promise<boolean> => {
+// Função para detectar a porta do backend
+const detectBackendPort = async (): Promise<string> => {
+  // Primeiro, tentar a porta padrão 8000
   try {
-    const response = await fetch(`${API_BASE_URL}/health`, {
+    const response = await fetch(`${API_BASE_URL}/health`, { method: 'GET' });
+    if (response.ok) {
+      return API_BASE_URL;
+    }
+  } catch (error) {
+    console.log('Port 8000 not available, trying alternative ports...');
+  }
+
+  // Se 8000 não funcionar, tentar outras portas
+  for (let port = 8001; port <= 8004; port++) {
+    try {
+      const url = `http://127.0.0.1:${port}`;
+      const response = await fetch(`${url}/health`, { method: 'GET' });
+      if (response.ok) {
+        console.log(`Backend found on port ${port}`);
+        return url;
+      }
+    } catch (error) {
+      // Continue tentando
+    }
+  }
+
+  return API_BASE_URL; // Fallback para porta padrão
+};
+
+// Função para verificar se o backend está rodando
+const checkBackendHealth = async (baseUrl?: string): Promise<boolean> => {
+  const url = baseUrl || await detectBackendPort();
+  
+  try {
+    const response = await fetch(`${url}/health`, {
       method: 'GET',
       timeout: 5000,
     } as RequestInit);
-    return response.ok;
+    
+    if (response.ok) {
+      console.log(`Backend health check successful on ${url}`);
+      return true;
+    } else {
+      console.log(`Backend health check failed with status: ${response.status} on ${url}`);
+      return false;
+    }
   } catch (error) {
-    console.log('Backend health check failed:', error);
+    console.log(`Backend health check failed on ${url}:`, error);
     return false;
   }
 };
@@ -60,6 +98,19 @@ const waitForBackend = async (maxRetries: number = 20, delay: number = 1000): Pr
     await new Promise(resolve => setTimeout(resolve, delay));
   }
   console.log('Backend is not available after maximum retries');
+  
+  // Tentar diagnóstico adicional
+  try {
+    const response = await fetch(`${API_BASE_URL}/`, { method: 'GET' });
+    console.log(`Root endpoint response status: ${response.status}`);
+    if (response.ok) {
+      const data = await response.text();
+      console.log('Root endpoint response:', data);
+    }
+  } catch (e) {
+    console.log('Root endpoint also failed:', e);
+  }
+  
   return false;
 };
 
@@ -192,9 +243,12 @@ function AppContent() {
       
       if (!backendAvailable) {
         throw new Error(
-          'Backend não está disponível. ' +
-          'Certifique-se de que o Python está instalado e que as dependências foram instaladas corretamente. ' +
-          'Tente fechar e abrir o aplicativo novamente.'
+          'Backend não está disponível. Possíveis causas:\n\n' +
+          '1. O Python pode não estar instalado ou acessível\n' +
+          '2. As dependências podem não estar instaladas (execute: pip install -r requirements.txt)\n' +
+          '3. O backend pode estar demorando para carregar modelos pesados\n' +
+          '4. Pode haver um erro interno no backend\n\n' +
+          'Verifique o console do desenvolvedor para mais detalhes ou tente reiniciar o aplicativo.'
         );
       }
       
