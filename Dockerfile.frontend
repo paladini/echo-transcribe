@@ -1,0 +1,33 @@
+# Dockerfile para o front-end React (Vite) + Nginx
+FROM node:20 AS build
+
+WORKDIR /app
+
+# Copia os arquivos do front-end
+COPY package.json package-lock.json ./
+COPY tsconfig.json ./
+COPY vite.config.ts ./
+COPY tailwind.config.js ./
+COPY postcss.config.js ./
+COPY src ./src
+COPY index.html ./
+COPY public ./public
+
+# Instala dependências e faz o build
+RUN npm install && npm run build
+
+# ---
+# Fase final: Nginx para servir os arquivos estáticos
+FROM nginx:alpine
+
+# Remove a configuração padrão do Nginx
+RUN rm -rf /usr/share/nginx/html/*
+
+# Copia o build do front-end para o Nginx
+COPY --from=build /app/dist /usr/share/nginx/html
+
+# Copia configuração customizada do Nginx (será criada depois)
+COPY nginx.conf /etc/nginx/nginx.conf
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

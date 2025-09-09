@@ -136,6 +136,49 @@ Download the latest version from [Releases](https://github.com/paladini/echo-tra
 - **AI**: faster-whisper (OpenAI Whisper)
 - **UI Components**: Radix UI + shadcn/ui
 
+
+## 🐳 Docker & Deploy
+
+You can run EchoTranscribe as a web service (FastAPI backend + React frontend) using a **single Docker image**. The backend serves the frontend automatically, making deployment and DockerHub publishing easy.
+
+### Build and run locally (single image)
+
+```bash
+# Build the single image (backend + frontend)
+docker build -t paladini/echo-transcribe:latest -f src-tauri/backend/Dockerfile .
+
+# Run the container
+docker run -p 8000:8000 paladini/echo-transcribe:latest
+
+# Access the frontend and API at http://localhost:8000
+# API docs: http://localhost:8000/docs
+```
+
+### Publishing to DockerHub
+
+1. Log in to DockerHub:
+   ```bash
+   docker login
+   ```
+2. Build the image with the correct tag:
+   ```bash
+   docker build -t paladini/echo-transcribe:latest -f src-tauri/backend/Dockerfile .
+   ```
+3. Push to DockerHub:
+   ```bash
+   docker push paladini/echo-transcribe:latest
+   ```
+
+### Notes
+
+- The frontend served via Docker is identical to the one used in the Tauri desktop app.
+- The Tauri (desktop) app does not run in a web container, but the React frontend is the same.
+- For production deployments, adjust environment variables and volumes as needed.
+
+---
+
+---
+
 ## 📋 Available Commands
 
 ```bash
