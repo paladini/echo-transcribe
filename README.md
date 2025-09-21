@@ -1,8 +1,7 @@
 # EchoTranscribe 🎙️
 
 An open-source desktop application for audio transcription (Speech-To-Text) using local AI. Private, secure and efficient.
-
-<img width="800" height="637" alt="image" style="text" src="https://github.com/user-attachments/assets/2c3db621-1bae-4cea-ad7b-870265e29b16" />
+<img width="1360" height="995" alt="glam-shot-20250921-191816" src="https://github.com/user-attachments/assets/2fea3067-3d1c-451f-a472-0176692c4366" />
 <img width="800" height="840" alt="image" src="https://github.com/user-attachments/assets/1b79aa45-43a2-403d-b3bd-0d7ecf973fad" />
 
 ## ✨ Features
