@@ -1,6 +1,6 @@
 # EchoTranscribe ­ƒÄÖ´©Å
 
-<img alt="Harness Score L0" src="https://paladini.github.io/harness-score/maturity/badge-l0.svg" height="20">
+<a href="https://paladini.github.io/harness-score/guide/maturity-model#l0-unharnessed" title="Harness Score — AI coding harness maturity"><img alt="Harness Score L0 (Unharnessed): measures AI-assisted development harness maturity with harness-score" src="https://paladini.github.io/harness-score/maturity/badge-l0.svg" height="20"></a>
 An open-source desktop application for audio transcription (Speech-To-Text) using local AI. Private, secure and efficient.
 
 <img width="1990" height="1186" alt="glam-shot-20250921-215530" src="https://github.com/user-attachments/assets/4f5fce93-db55-4132-b7ef-014796a5c434" />
