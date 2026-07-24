@@ -1,26 +1,26 @@
-# EchoTranscribe ­ƒÄÖ´©Å
+# EchoTranscribe 🎙️
 
 <a href="https://paladini.io/harness-score/guide/maturity-model#l0-%C2%B7-unharnessed" title="Harness Score — AI coding harness maturity"><img alt="Harness Score L0 (Unharnessed): measures AI-assisted development harness maturity with harness-score" src="https://paladini.github.io/harness-score/maturity/badge-l0.svg" height="20"></a>
 An open-source desktop application for audio transcription (Speech-To-Text) using local AI. Private, secure and efficient.
 
 <img width="1990" height="1186" alt="glam-shot-20250921-215530" src="https://github.com/user-attachments/assets/4f5fce93-db55-4132-b7ef-014796a5c434" />
 
-## Ô£¿ Features
+## ✨ Features
 
-- ­ƒöÆ **Completely Local**: Your audio files never leave your computer
-- ­ƒñû **Advanced AI**: Uses Whisper models for high-quality transcription
-- ­ƒÄ¿ **Modern Interface**: Clean and intuitive design with dark theme support
-- ­ƒôü **Multiple Formats**: Support for MP3, WAV, FLAC, M4A, OGG and WebM
-- ­ƒöä **Batch Transcription**: Process multiple files simultaneously
-- ­ƒîì **Automatic Detection**: Automatically identifies audio language
-- ÔÅ▒´©Å **Precise Timestamps**: Word-level timestamps for detailed navigation
-- ­ƒÆ¥ **Flexible Export**: Export to TXT, SRT or JSON
-- ÔÜÖ´©Å **Persistent Settings**: Dark/light theme and language saved between sessions
-- ­ƒîÉ **Multilingual**: Interface in English, Portuguese and Spanish (expandable)
-- ÔÜí **Performance**: Optimized for speed and efficiency
-- ­ƒûÑ´©Å **Cross-Platform**: Works on Windows, macOS and Linux
+- 🔒 **Completely Local**: Your audio files never leave your computer
+- 🤖 **Advanced AI**: Uses Whisper models for high-quality transcription
+- 🎨 **Modern Interface**: Clean and intuitive design with dark theme support
+- 📁 **Multiple Formats**: Support for MP3, WAV, FLAC, M4A, OGG and WebM
+- 🔄 **Batch Transcription**: Process multiple files simultaneously
+- 🌍 **Automatic Detection**: Automatically identifies audio language
+- ⏱️ **Precise Timestamps**: Word-level timestamps for detailed navigation
+- 💾 **Flexible Export**: Export to TXT, SRT or JSON
+- ⚙️ **Persistent Settings**: Dark/light theme and language saved between sessions
+- 🌐 **Multilingual**: Interface in English, Portuguese and Spanish (expandable)
+- ⚡ **Performance**: Optimized for speed and efficiency
+- 🖥️ **Cross-Platform**: Works on Windows, macOS and Linux
 
-## ­ƒÜÇ Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 
@@ -89,13 +89,13 @@ npm run tauri dev
    - Backend API: http://localhost:8000/docs
    - Frontend: Opens automatically in Tauri window
 
-> ­ƒôû **For detailed development setup**, see [DEVELOPMENT.md](DEVELOPMENT.md)
+> 📖 **For detailed development setup**, see [DEVELOPMENT.md](DEVELOPMENT.md)
 
 ### Production Installation
 
 Download the latest version from [Releases](https://github.com/paladini/echo-transcribe/releases) for your operating system.
 
-## ­ƒÄ» How to Use
+## 🎯 How to Use
 
 1. **Select audio file(s)**
    - Drag and drop one or multiple files to the designated area
@@ -128,7 +128,7 @@ Download the latest version from [Releases](https://github.com/paladini/echo-tra
    - Access settings to customize theme and language
    - Your preferences are automatically saved for future sessions
 
-## ­ƒøá´©Å Technologies
+## 🛠️ Technologies
 
 - **Frontend**: React + TypeScript + Tailwind CSS
 - **Desktop**: Tauri (Rust)
@@ -136,7 +136,7 @@ Download the latest version from [Releases](https://github.com/paladini/echo-tra
 - **AI**: faster-whisper (OpenAI Whisper)
 - **UI Components**: Radix UI + shadcn/ui
 
-## ­ƒôï Available Commands
+## 📋 Available Commands
 
 ```bash
 # Development (Tauri v2)
@@ -156,7 +156,7 @@ npm run preview         # Preview built frontend
 npm run tauri --version # Check Tauri CLI version
 ```
 
-### ­ƒÅù´©Å **Building and Running Executable**
+### 🏗️ **Building and Running Executable**
 
 After running `npm run tauri build`, you can find and execute the generated files:
 
@@ -176,7 +176,7 @@ echo-transcribe  # Run from anywhere after installation
 sudo rpm -i src-tauri/target/release/bundle/rpm/EchoTranscribe-0.1.0-1.x86_64.rpm
 ```
 
-## ­ƒöº Configuration
+## 🔧 Configuration
 
 ### AI Models
 
@@ -196,7 +196,7 @@ Echo-Transcribe automatically downloads AI models as needed. Models are stored i
 | OGG    | .ogg      | 500MB    |
 | WebM   | .webm     | 500MB    |
 
-## ­ƒÉø Troubleshooting
+## 🐛 Troubleshooting
 
 ### Common Issues
 
@@ -227,7 +227,7 @@ Application logs are located at:
 - **Linux/macOS**: `~/.echo-transcribe/logs/`
 - **Windows**: `%USERPROFILE%\\.echo-transcribe\\logs\\`
 
-## ­ƒñØ Contributing
+## 🤝 Contributing
 
 Contributions are very welcome! Please read our [Contributing Guide](CONTRIBUTING.md) to get started.
 
@@ -239,9 +239,9 @@ Contributions are very welcome! Please read our [Contributing Guide](CONTRIBUTIN
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## ­ƒôØ Roadmap
+## 📝 Roadmap
 
-- [x] **v0.1.0** Ô£à **COMPLETED**
+- [x] **v0.1.0** ✅ **COMPLETED**
   - [x] Batch transcription support
   - [x] Automatic language detection
   - [x] Precise word-level timestamps
@@ -261,23 +261,23 @@ Contributions are very welcome! Please read our [Contributing Guide](CONTRIBUTIN
   - [ ] Audio streaming support
   - [ ] Plugin marketplace
 
-## ­ƒôä License
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## ­ƒÖÅ Acknowledgments
+## 🙏 Acknowledgments
 
 - [OpenAI](https://openai.com/) for the Whisper model
 - [Tauri](https://tauri.app/) for the desktop framework
 - [FastAPI](https://fastapi.tiangolo.com/) for the backend framework
 - [shadcn/ui](https://ui.shadcn.com/) for UI components
 
-## ­ƒô× Support
+## 📞 Support
 
 -  Issues: [GitHub Issues](https://github.com/paladini/echo-transcribe/issues)
-- ­ƒÆ¼ Discussions: [GitHub Discussions](https://github.com/paladini/echo-transcribe/discussions)
-- ­ƒæñ Author: [github.com/paladini](https://github.com/paladini)
+- 💬 Discussions: [GitHub Discussions](https://github.com/paladini/echo-transcribe/discussions)
+- 👤 Author: [github.com/paladini](https://github.com/paladini)
 
 ---
 
-**EchoTranscribe** - Transforming audio to text with privacy and quality. ­ƒÄÖ´©ÅÔ£¿
+**EchoTranscribe** - Transforming audio to text with privacy and quality. 🎙️✨
