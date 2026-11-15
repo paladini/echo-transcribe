@@ -1,0 +1,29 @@
+# Optional NVIDIA GPU override. The default image is CPU PyTorch.
+# Requires NVIDIA Container Toolkit. CUDA wheels are large.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build
+#
+# If the GPU image fails to use the device, stay on the CPU compose file.
+# A first-class CUDA base image (and DGX Spark, issue #4) is a follow-up.
+
+services:
+  api:
+    image: echo-transcribe-api:gpu
+    build:
+      context: ./src-tauri/backend
+      dockerfile: Dockerfile
+      args:
+        TORCH_INDEX_URL: https://download.pytorch.org/whl/cu121
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "8000"
+      WHISPER_DEVICE: cuda
+      WHISPER_COMPUTE_TYPE: float16
+      CORS_ALLOW_ORIGINS: "*"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

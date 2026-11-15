@@ -1,0 +1,45 @@
+# Self-hosted EchoTranscribe API (faster-whisper).
+# The Tauri desktop app remains the primary product.
+#
+#   docker compose up -d
+#   open http://localhost:8000/docs
+
+services:
+  api:
+    build:
+      context: ./src-tauri/backend
+      dockerfile: Dockerfile
+      args:
+        TORCH_INDEX_URL: https://download.pytorch.org/whl/cpu
+    image: echo-transcribe-api:cpu
+    container_name: echo-transcribe-api
+    restart: unless-stopped
+    ports:
+      - "${ECHO_PORT:-8000}:8000"
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "8000"
+      ECHO_DATA_DIR: /data
+      ECHO_MODELS_DIR: /data/models
+      ECHO_TEMP_DIR: /data/temp
+      HF_HOME: /data/hf-cache
+      HUGGINGFACE_HUB_CACHE: /data/hf-cache
+      WHISPER_DEVICE: cpu
+      WHISPER_COMPUTE_TYPE: int8
+      # Browser clients (Swagger UI from another origin). Curl does not need CORS.
+      CORS_ALLOW_ORIGINS: "*"
+    volumes:
+      - echo-models:/data/models
+      - echo-hf-cache:/data/hf-cache
+      - echo-uploads:/data/temp
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 30s
+      timeout: 8s
+      retries: 5
+      start_period: 45s
+
+volumes:
+  echo-models:
+  echo-hf-cache:
+  echo-uploads:
