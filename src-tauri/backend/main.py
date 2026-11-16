@@ -11,27 +11,86 @@ import tempfile
 import shutil
 import socket
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 import uvicorn
-from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import logging
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def find_available_port(start_port=8000, max_attempts=10):
+
+def _env_first(*names: str, default: Optional[str] = None) -> Optional[str]:
+    for name in names:
+        value = os.getenv(name)
+        if value is not None and value != "":
+            return value
+    return default
+
+
+def resolve_bind_host() -> str:
+    """Desktop default is localhost; containers should set HOST=0.0.0.0."""
+    return _env_first("ECHO_HOST", "HOST", default="127.0.0.1")
+
+
+def resolve_data_paths() -> Tuple[Path, Path]:
+    data_dir = Path(
+        _env_first("ECHO_DATA_DIR", default=str(Path.home() / ".echo-transcribe"))
+    )
+    models_dir = Path(_env_first("ECHO_MODELS_DIR", default=str(data_dir / "models")))
+    temp_dir = Path(_env_first("ECHO_TEMP_DIR", default=str(data_dir / "temp")))
+    return models_dir, temp_dir
+
+
+def cors_settings() -> Tuple[list, bool]:
+    """Preserve Tauri origins by default; Docker may set CORS_ALLOW_ORIGINS=*."""
+    defaults = [
+        "http://localhost:1420",
+        "http://127.0.0.1:1420",
+        "tauri://localhost",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
+    extra = os.getenv("CORS_ALLOW_ORIGINS", "").strip()
+    if extra == "*":
+        return ["*"], False
+    origins = list(defaults)
+    if extra:
+        origins.extend(item.strip() for item in extra.split(",") if item.strip())
+    return origins, True
+
+
+def find_available_port(start_port=8000, max_attempts=10, host="127.0.0.1"):
     for port in range(start_port, start_port + max_attempts):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.bind(('127.0.0.1', port))
+                s.bind((host, port))
                 return port
         except OSError:
             continue
     return None
+
+
+def resolve_listen_port(host: str) -> Optional[int]:
+    """Honor PORT/ECHO_PORT when set (Docker). Otherwise scan 8000-8004 like the desktop app."""
+    port_env = _env_first("ECHO_PORT", "PORT")
+    if port_env is not None:
+        try:
+            return int(port_env)
+        except ValueError:
+            logger.error("Invalid PORT value: %s", port_env)
+            return None
+    return find_available_port(8000, 5, host=host)
 
 # Inicializar FastAPI
 app = FastAPI(
@@ -40,11 +99,11 @@ app = FastAPI(
     version="0.1.0"
 )
 
-# Configurar CORS
+_cors_origins, _cors_credentials = cors_settings()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:1420", "tauri://localhost"],
-    allow_credentials=True,
+    allow_origins=_cors_origins,
+    allow_credentials=_cors_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -74,9 +133,8 @@ class BatchTranscriptionRequest(BaseModel):
     model: str
     language: Optional[str] = None
 
-# Variáveis globais
-MODELS_DIR = Path.home() / ".echo-transcribe" / "models"
-TEMP_DIR = Path.home() / ".echo-transcribe" / "temp"
+# Variáveis globais (overridable via ECHO_DATA_DIR / ECHO_MODELS_DIR / ECHO_TEMP_DIR)
+MODELS_DIR, TEMP_DIR = resolve_data_paths()
 
 # Criar diretórios se não existirem
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
@@ -134,13 +192,22 @@ def load_whisper_model(model_name: str):
             
         logger.info(f"Carregando modelo {model_name}...")
         model_path = MODELS_DIR / f"whisper-{model_name}"
-        
+        model_kwargs = {"download_root": str(MODELS_DIR)}
+        device = _env_first("WHISPER_DEVICE")
+        compute_type = _env_first("WHISPER_COMPUTE_TYPE")
+        if device:
+            model_kwargs["device"] = device
+        if compute_type:
+            model_kwargs["compute_type"] = compute_type
+
         if not model_path.exists():
             # Baixar modelo se não existir
             logger.info(f"Baixando modelo {model_name}...")
-            current_model = WhisperModel(model_name, download_root=str(MODELS_DIR))
+            current_model = WhisperModel(model_name, **model_kwargs)
         else:
-            current_model = WhisperModel(str(model_path))
+            current_model = WhisperModel(str(model_path), **{
+                k: v for k, v in model_kwargs.items() if k != "download_root"
+            })
             
         current_model_name = model_name
         logger.info(f"Modelo {model_name} carregado com sucesso")
@@ -179,9 +246,9 @@ async def get_models():
 async def transcribe_audio(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
-    model: str = "base",
-    language: Optional[str] = None,
-    auto_detect_language: bool = True
+    model: str = Form("base"),
+    language: Optional[str] = Form(None),
+    auto_detect_language: bool = Form(True),
 ):
     """
     Transcreve um arquivo de áudio
@@ -311,9 +378,9 @@ async def transcribe_audio(
 async def transcribe_batch(
     background_tasks: BackgroundTasks,
     files: List[UploadFile] = File(...),
-    model: str = "base",
-    language: Optional[str] = None,
-    auto_detect_language: bool = True
+    model: str = Form("base"),
+    language: Optional[str] = Form(None),
+    auto_detect_language: bool = Form(True),
 ):
     """
     Transcreve múltiplos arquivos de áudio em lote
@@ -509,13 +576,13 @@ if __name__ == "__main__":
     
     logger.info("🎙️ Starting EchoTranscribe backend server...")
     
-    # Encontrar porta disponível
-    port = find_available_port(8000, 5)  # Tentar portas 8000-8004
+    host = resolve_bind_host()
+    port = resolve_listen_port(host)
     if port is None:
         logger.error("❌ No available ports found in range 8000-8004")
         exit(1)
     
-    if port != 8000:
+    if _env_first("ECHO_PORT", "PORT") is None and port != 8000:
         logger.warning(f"⚠️ Port 8000 is busy, using port {port} instead")
     
     # Salvar porta para o frontend
@@ -526,14 +593,14 @@ if __name__ == "__main__":
     except Exception as e:
         logger.warning(f"Could not save port file: {e}")
     
-    logger.info(f"🌐 Backend will be available at: http://127.0.0.1:{port}")
-    logger.info(f"📚 API docs will be available at: http://127.0.0.1:{port}/docs")
+    logger.info(f"🌐 Backend will be available at: http://{host}:{port}")
+    logger.info(f"📚 API docs will be available at: http://{host}:{port}/docs")
     
     try:
         # Configuração para produção e desenvolvimento
         uvicorn.run(
             "main:app",
-            host="127.0.0.1",
+            host=host,
             port=port,
             reload=False,  # Desabilitado para produção
             log_level="info",
