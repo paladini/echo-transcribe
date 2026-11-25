@@ -120,13 +120,13 @@ T7
 
 **Done when**:
 
-- [ ] OpenAPI lists `model` under requestBody (not query) for POST `/transcribe`
-- [ ] `GET /health` JSON `status` is `healthy`
-- [ ] Invalid model returns HTTP 400
-- [ ] Unsupported extension returns HTTP 400
-- [ ] Multipart `model=tiny` is the name passed into the (mocked) loader
-- [ ] Gate check passes: `python -m pytest src-tauri/backend/tests -q`
-- [ ] Test count: 13 tests pass (8 config + 5 API)
+- [x] OpenAPI lists `model` under requestBody (not query) for POST `/transcribe`
+- [x] `GET /health` JSON `status` is `healthy`
+- [x] Invalid model returns HTTP 400
+- [x] Unsupported extension returns HTTP 400
+- [x] Multipart `model=tiny` is the name passed into the (mocked) loader
+- [x] Gate check passes: `python -m pytest src-tauri/backend/tests -q`
+- [x] Test count: 13 tests pass (8 config + 5 API)
 
 **Tests**: unit
 **Gate**: quick

@@ -162,9 +162,9 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | DOCKER-06 | P1: HOST env override | Tasks | Verified |
 | DOCKER-07 | P1: Port scan vs PORT env | Tasks | Verified |
 | DOCKER-08 | P1: Invalid PORT | Tasks | Verified |
-| DOCKER-09 | P1: Form fields for model/language | Tasks | Pending |
-| DOCKER-10 | P1: Invalid model 400 | Tasks | Pending |
-| DOCKER-11 | P1: Invalid extension 400 | Tasks | Pending |
+| DOCKER-09 | P1: Form fields for model/language | Tasks | Verified |
+| DOCKER-10 | P1: Invalid model 400 | Tasks | Verified |
+| DOCKER-11 | P1: Invalid extension 400 | Tasks | Verified |
 | DOCKER-12 | P1: README EN + PT | Tasks | Pending |
 | DOCKER-13 | P1: release.yml untouched | Tasks | Pending |
 | DOCKER-14 | P2: GHCR publish on v* tags | Tasks | Pending |
@@ -176,7 +176,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
-**Coverage:** 17 total, 5 verified (DOCKER-05..08, DOCKER-17), 12 pending
+**Coverage:** 17 total, 8 verified, 9 pending
 
 ---
 
