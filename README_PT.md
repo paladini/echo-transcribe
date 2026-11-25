@@ -90,7 +90,7 @@ Baixe a versão mais recente dos [Releases](https://github.com/paladini/echo-tra
 
 ## 🐳 API self-hosted (Docker)
 
-O **aplicativo desktop Tauri continua sendo o produto principal**. Use Docker só se quiser o backend FastAPI/faster-whisper numa máquina **sem Node, Rust ou GTK** — homelab, NAS ou Linux headless.
+O **aplicativo desktop Tauri continua sendo o produto principal**. Use Docker só se quiser o backend FastAPI/faster-whisper numa máquina **sem Node, Rust ou GTK** (homelab, NAS ou Linux headless).
 
 Os modelos Whisper ficam em volumes do Compose. O áudio é enviado como upload e processado **dentro do container**; não há serviço de transcrição na nuvem.
 
@@ -99,6 +99,18 @@ git clone https://github.com/paladini/echo-transcribe.git
 cd echo-transcribe
 docker compose up -d --build
 ```
+
+Depois que uma tag `v*` for publicada, dá para pular o build local do PyTorch:
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+- Docker Hub: [`paladini/echo-transcribe:cpu`](https://hub.docker.com/r/paladini/echo-transcribe)
+- GitHub Container Registry: `ghcr.io/paladini/echo-transcribe:cpu`
+
+Se essas tags ainda não existirem no registry, continue com `--build`.
 
 Com o container saudável:
 
@@ -159,7 +171,7 @@ Se o CUDA não aparecer no container, use só o arquivo CPU. Uma imagem com base
 
 ### Notas Docker
 
-- O primeiro `docker compose up --build` baixa o PyTorch (vários GB) e demora.
+- O primeiro `docker compose up --build` baixa o PyTorch (vários GB) e demora. Prefira `docker compose pull` quando `paladini/echo-transcribe:cpu` existir.
 - O healthcheck usa o `GET /health` já existente.
 - Este caminho **não** inclui a interface Tauri. Use `/docs` ou `curl`.
 - Publicar a porta `8000` numa interface de rede expõe uma API **sem autenticação**. Para restringir ao host: `127.0.0.1:8000:8000`.

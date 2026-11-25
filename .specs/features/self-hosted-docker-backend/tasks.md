@@ -231,12 +231,12 @@ T7
 
 **Done when**:
 
-- [ ] README.md states the desktop app remains the primary product
-- [ ] README.md includes `curl` with `-F "model=` and `/transcribe`
-- [ ] README_PT.md includes `docker compose up` and `/health`
-- [ ] README warns that publishing port 8000 on a network-facing host exposes an unauthenticated API
-- [ ] Gate check passes: build gate command
-- [ ] Test count: 13 tests pass (unchanged)
+- [x] README.md states the desktop app remains the primary product
+- [x] README.md includes `curl` with `-F "model=` and `/transcribe`
+- [x] README_PT.md includes `docker compose up` and `/health`
+- [x] README warns that publishing port 8000 on a network-facing host exposes an unauthenticated API
+- [x] Gate check passes: build gate command
+- [x] Test count: 13 tests pass (unchanged)
 
 **Tests**: none
 **Gate**: build
