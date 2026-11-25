@@ -1,7 +1,12 @@
 name: docker
 
 on:
+  workflow_dispatch:
   push:
+    branches:
+      - main
+    tags:
+      - "v*"
     paths:
       - "src-tauri/backend/Dockerfile"
       - "src-tauri/backend/.dockerignore"
@@ -27,6 +32,7 @@ on:
 jobs:
   compose-and-dockerfile:
     name: lint compose / Dockerfile
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -49,3 +55,69 @@ jobs:
         run: |
           python3 -m pip install --quiet fastapi uvicorn python-multipart pydantic python-dotenv pytest httpx
           python3 -m pytest src-tauri/backend/tests -q
+
+  publish-cpu:
+    name: publish CPU image
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Decide Docker Hub publish
+        id: hub
+        env:
+          HUB_USER: ${{ vars.DOCKERHUB_USERNAME }}
+          HUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -n "$HUB_USER" ] && [ -n "$HUB_TOKEN" ]; then
+            echo "images=${HUB_USER}/echo-transcribe" >> "$GITHUB_OUTPUT"
+          else
+            echo "images=" >> "$GITHUB_OUTPUT"
+            echo "Docker Hub credentials missing; publishing GHCR only."
+          fi
+
+      - name: Log in to Docker Hub
+        if: steps.hub.outputs.images != ''
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}
+            ${{ steps.hub.outputs.images }}
+          tags: |
+            type=raw,value=cpu
+            type=raw,value=latest
+            type=semver,pattern={{version}}
+            type=ref,event=tag
+
+      - name: Build and push CPU image
+        uses: docker/build-push-action@v6
+        with:
+          context: src-tauri/backend
+          file: src-tauri/backend/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu

@@ -167,8 +167,8 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | DOCKER-11 | P1: Invalid extension 400 | Tasks | Verified |
 | DOCKER-12 | P1: README EN + PT | Tasks | Verified |
 | DOCKER-13 | P1: release.yml untouched | Tasks | Verified |
-| DOCKER-14 | P2: GHCR publish on v* tags | Tasks | Pending |
-| DOCKER-15 | P2: Docker Hub gated on secrets | Tasks | Pending |
+| DOCKER-14 | P2: GHCR publish on v* tags | Tasks | Verified |
+| DOCKER-15 | P2: Docker Hub gated on secrets | Tasks | Verified |
 | DOCKER-16 | P2: Compose image name | Tasks | Verified |
 | DOCKER-17 | Edge: CORS * disables credentials | Tasks | Verified |
 
@@ -176,7 +176,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
-**Coverage:** 17 total, 14 verified, 3 pending
+**Coverage:** 17 total, 17 verified, 0 unmapped
 
 ---
 

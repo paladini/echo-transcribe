@@ -21,10 +21,10 @@
 ## Handoff
 
 - **Feature**: self-hosted-docker-backend / `.specs/features/self-hosted-docker-backend`
-- **Phase / Task**: Specify complete, Design + Tasks next then Execute
-- **Completed**: none
+- **Phase / Task**: Execute complete, Verifier next
+- **Completed**: T1, T2, T3, T4, T5, T6, T7
 - **In-progress** (file:line): none
-- **Next step**: Validate spec, write design and tasks, then implement remaining tests and registry publish on PR branch
-- **Blockers**: none
-- **Uncommitted files**: harness-report.json (unrelated)
+- **Next step**: Independent Verifier, then push PR #6 and pre-merge audit
+- **Blockers**: GATE-MERGE and GATE-RELEASE still need explicit user OK
+- **Uncommitted files**: harness-report.json, .agents/issues (unrelated to product)
 - **Branch**: cursor/self-hosted-docker-backend-b034

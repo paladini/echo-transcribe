@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `.specs/features/self-hosted-docker-backend/design.md`
-**Status**: In Progress
+**Status**: Done
 
 ---
 
@@ -260,12 +260,12 @@ T7
 
 **Done when**:
 
-- [ ] Tag trigger `v*` exists
-- [ ] GHCR login uses `GITHUB_TOKEN` and packages write permission
-- [ ] Docker Hub login is conditional on secrets/variables
-- [ ] `release.yml` still has no Docker publish steps
-- [ ] Gate check passes: build gate command
-- [ ] Test count: 13 tests pass (unchanged)
+- [x] Tag trigger `v*` exists
+- [x] GHCR login uses `GITHUB_TOKEN` and packages write permission
+- [x] Docker Hub login is conditional on secrets/variables
+- [x] `release.yml` still has no Docker publish steps
+- [x] Gate check passes: build gate command
+- [x] Test count: 13 tests pass (unchanged)
 
 **Tests**: none
 **Gate**: build
