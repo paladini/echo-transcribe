@@ -154,9 +154,9 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 
 | Requirement ID | Story | Phase | Status |
 | -------------- | ----- | ----- | ------ |
-| DOCKER-01 | P1: Compose up + health | Tasks | Pending |
+| DOCKER-01 | P1: Compose up + health | Tasks | Verified |
 | DOCKER-02 | P1: Container binds 0.0.0.0:8000 | Tasks | Verified |
-| DOCKER-03 | P1: Named volumes | Tasks | Pending |
+| DOCKER-03 | P1: Named volumes | Tasks | Verified |
 | DOCKER-04 | P1: CPU torch index | Tasks | Verified |
 | DOCKER-05 | P1: Default bind 127.0.0.1 | Tasks | Verified |
 | DOCKER-06 | P1: HOST env override | Tasks | Verified |
@@ -169,14 +169,14 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | DOCKER-13 | P1: release.yml untouched | Tasks | Pending |
 | DOCKER-14 | P2: GHCR publish on v* tags | Tasks | Pending |
 | DOCKER-15 | P2: Docker Hub gated on secrets | Tasks | Pending |
-| DOCKER-16 | P2: Compose image name | Tasks | Pending |
+| DOCKER-16 | P2: Compose image name | Tasks | Verified |
 | DOCKER-17 | Edge: CORS * disables credentials | Tasks | Verified |
 
 **ID format:** `DOCKER-NN`
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
-**Coverage:** 17 total, 8 verified, 9 pending
+**Coverage:** 17 total, 12 verified, 5 pending
 
 ---
 

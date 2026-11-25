@@ -11,7 +11,7 @@ services:
       dockerfile: Dockerfile
       args:
         TORCH_INDEX_URL: https://download.pytorch.org/whl/cpu
-    image: echo-transcribe-api:cpu
+    image: paladini/echo-transcribe:cpu
     container_name: echo-transcribe-api
     restart: unless-stopped
     ports:

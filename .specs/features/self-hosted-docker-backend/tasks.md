@@ -176,13 +176,13 @@ T7
 
 **Done when**:
 
-- [ ] `docker compose -f docker-compose.yml config --quiet` exits 0
-- [ ] `docker compose -f docker-compose.yml -f docker-compose.gpu.yml config --quiet` exits 0
-- [ ] Configured image is `paladini/echo-transcribe:cpu`
-- [ ] Volumes `echo-models`, `echo-hf-cache`, `echo-uploads` are present
-- [ ] Host mapping uses `${ECHO_PORT:-8000}:8000` and container `PORT=8000`
-- [ ] Gate check passes: full compose config commands
-- [ ] Test count: 13 tests pass (unchanged)
+- [x] `docker compose -f docker-compose.yml config --quiet` exits 0
+- [x] `docker compose -f docker-compose.yml -f docker-compose.gpu.yml config --quiet` exits 0
+- [x] Configured image is `paladini/echo-transcribe:cpu`
+- [x] Volumes `echo-models`, `echo-hf-cache`, `echo-uploads` are present
+- [x] Host mapping uses `${ECHO_PORT:-8000}:8000` and container `PORT=8000`
+- [x] Gate check passes: full compose config commands
+- [x] Test count: 13 tests pass (unchanged)
 
 **Tests**: none
 **Gate**: full
