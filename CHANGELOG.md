@@ -5,6 +5,14 @@ All notable changes to EchoTranscribe will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Self-hosted Docker path for the FastAPI/faster-whisper backend (`Dockerfile`, `docker-compose.yml`) so transcription can run without Node, Rust, or GTK. The Tauri desktop app remains the primary product.
+- Optional NVIDIA GPU Compose override (`docker-compose.gpu.yml`).
+- `HOST` / `PORT` (and `ECHO_*` data-dir) environment variables so the API can bind `0.0.0.0` in a container while the desktop app still defaults to localhost.
+- CPU image publish on `v*` tags to GHCR (`ghcr.io/paladini/echo-transcribe`). Docker Hub (`paladini/echo-transcribe`) is pushed when Hub credentials are configured.
+
 ## [0.1.1] - 2025-09-02
 
 ### 🎉 New Features

@@ -28,6 +28,8 @@ An open-source desktop application for audio transcription (Speech-To-Text) usin
 - **Python** (version 3.8 or higher)
 - **Rust** (for Tauri compilation)
 
+Prefer not to install that toolchain? Skip to [Self-hosted API (Docker)](#-self-hosted-api-docker).
+
 #### Linux (Ubuntu/Debian)
 ```bash
 sudo apt update
@@ -95,6 +97,94 @@ npm run tauri dev
 
 Download the latest version from [Releases](https://github.com/paladini/echo-transcribe/releases) for your operating system.
 
+## 🐳 Self-hosted API (Docker)
+
+The **desktop app remains the primary product**. Use Docker only if you want the FastAPI/faster-whisper backend on a machine **without Node, Rust, or GTK** (homelab, NAS, or headless Linux).
+
+Whisper models stay on disk (Compose volumes). Audio is sent to the API as an upload and processed locally in the container; nothing is sent to a cloud transcription service.
+
+```bash
+git clone https://github.com/paladini/echo-transcribe.git
+cd echo-transcribe
+docker compose up -d --build
+```
+
+After a version tag (`v*`) has been published you can skip the local PyTorch build:
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+- Docker Hub: [`paladini/echo-transcribe:cpu`](https://hub.docker.com/r/paladini/echo-transcribe)
+- GitHub Container Registry: `ghcr.io/paladini/echo-transcribe:cpu`
+
+If those tags are not on the registry yet, keep using `--build`.
+
+When the container is healthy:
+
+- API: http://localhost:8000
+- Health: http://localhost:8000/health
+- Swagger UI: http://localhost:8000/docs
+
+Transcribe a file (first run downloads the chosen Whisper model into the `echo-models` volume):
+
+```bash
+curl -F "file=@recording.mp3" -F "model=tiny" http://localhost:8000/transcribe
+```
+
+Supported upload formats match the desktop app: MP3, WAV, FLAC, M4A, OGG, WebM. Models: `tiny`, `base`, `small`, `medium`.
+
+Stop and remove the container (volumes with downloaded models are kept):
+
+```bash
+docker compose down
+```
+
+### Volumes
+
+| Volume | Container path | Purpose |
+|--------|----------------|---------|
+| `echo-models` | `/data/models` | faster-whisper / CTranslate2 model cache |
+| `echo-hf-cache` | `/data/hf-cache` | Hugging Face download cache |
+| `echo-uploads` | `/data/temp` | Temporary upload files (deleted after each job) |
+
+### Environment
+
+Compose sets `HOST=0.0.0.0` so the API is reachable from the host. The desktop backend still defaults to `127.0.0.1` unless you export `HOST` yourself.
+
+| Variable | Default in Compose | Notes |
+|----------|--------------------|--------|
+| `ECHO_PORT` | `8000` | Host port published to the container |
+| `HOST` / `ECHO_HOST` | `0.0.0.0` (container) / `127.0.0.1` (desktop) | Bind address |
+| `PORT` / `ECHO_PORT` | `8000` | Listen port inside the container |
+| `ECHO_MODELS_DIR` | `/data/models` | Model cache |
+| `ECHO_TEMP_DIR` | `/data/temp` | Upload temp dir |
+| `WHISPER_DEVICE` | `cpu` | Use `cuda` only with the GPU override |
+| `WHISPER_COMPUTE_TYPE` | `int8` | `int8` is appropriate for CPU |
+| `CORS_ALLOW_ORIGINS` | `*` | Desktop app still uses localhost / `tauri://localhost` when this is unset |
+
+Copy `.env.example` to `.env` if you want a different published port. Do not put API keys or tokens in the image; this service has none.
+
+### CPU vs GPU
+
+The default image installs **CPU PyTorch** so it runs on machines without NVIDIA drivers. Transcription is slower than GPU, especially for `small` and `medium`.
+
+Optional GPU override (NVIDIA Container Toolkit required; image is much larger):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build
+```
+
+If CUDA is not visible inside the container, use the CPU compose file. A dedicated CUDA base image (and NVIDIA DGX Spark support) is left as a follow-up.
+
+### Docker notes
+
+- First `docker compose up --build` downloads PyTorch and is slow / several GB. Prefer `docker compose pull` when `paladini/echo-transcribe:cpu` exists.
+- Healthcheck hits existing `GET /health`.
+- This path does **not** ship the Tauri UI. Use `/docs` or `curl`.
+- Publishing port `8000` on a network-facing host exposes an unauthenticated API. Bind to localhost (change the ports mapping to `127.0.0.1:8000:8000`) if that is not what you want.
+
 ## 🎯 How to Use
 
 1. **Select audio file(s)**
@@ -150,6 +240,10 @@ npm run tauri build     # Build complete application (generates executable)
 # Backend (Python)
 cd src-tauri/backend
 python main.py          # Start standalone backend server
+
+# Self-hosted API (Docker, no Node/Rust/GTK)
+docker compose up -d --build
+# GPU (optional): docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build
 
 # Other useful commands
 npm run preview         # Preview built frontend

@@ -86,7 +86,95 @@ npm run tauri dev
 
 ### Instalação para Produção
 
-Baixe a versão mais recente dos [Releases](https://github.com/seu-usuario/echo-transcribe/releases) para seu sistema operacional.
+Baixe a versão mais recente dos [Releases](https://github.com/paladini/echo-transcribe/releases) para seu sistema operacional.
+
+## 🐳 API self-hosted (Docker)
+
+O **aplicativo desktop Tauri continua sendo o produto principal**. Use Docker só se quiser o backend FastAPI/faster-whisper numa máquina **sem Node, Rust ou GTK** (homelab, NAS ou Linux headless).
+
+Os modelos Whisper ficam em volumes do Compose. O áudio é enviado como upload e processado **dentro do container**; não há serviço de transcrição na nuvem.
+
+```bash
+git clone https://github.com/paladini/echo-transcribe.git
+cd echo-transcribe
+docker compose up -d --build
+```
+
+Depois que uma tag `v*` for publicada, dá para pular o build local do PyTorch:
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+- Docker Hub: [`paladini/echo-transcribe:cpu`](https://hub.docker.com/r/paladini/echo-transcribe)
+- GitHub Container Registry: `ghcr.io/paladini/echo-transcribe:cpu`
+
+Se essas tags ainda não existirem no registry, continue com `--build`.
+
+Com o container saudável:
+
+- API: http://localhost:8000
+- Health: http://localhost:8000/health
+- Swagger UI: http://localhost:8000/docs
+
+Transcrever um arquivo (na primeira vez o modelo Whisper é baixado para o volume `echo-models`):
+
+```bash
+curl -F "file=@gravacao.mp3" -F "model=tiny" http://localhost:8000/transcribe
+```
+
+Formatos iguais ao app: MP3, WAV, FLAC, M4A, OGG, WebM. Modelos: `tiny`, `base`, `small`, `medium`.
+
+Parar o container (os volumes com os modelos são preservados):
+
+```bash
+docker compose down
+```
+
+### Volumes
+
+| Volume | Caminho no container | Uso |
+|--------|----------------------|-----|
+| `echo-models` | `/data/models` | cache dos modelos faster-whisper / CTranslate2 |
+| `echo-hf-cache` | `/data/hf-cache` | cache de download do Hugging Face |
+| `echo-uploads` | `/data/temp` | arquivos temporários de upload (apagados após cada job) |
+
+### Variáveis de ambiente
+
+O Compose define `HOST=0.0.0.0` para a API ser acessível no host. No desktop o bind continua `127.0.0.1`, a menos que você exporte `HOST`.
+
+| Variável | Padrão no Compose | Notas |
+|----------|-------------------|--------|
+| `ECHO_PORT` | `8000` | Porta publicada no host |
+| `HOST` / `ECHO_HOST` | `0.0.0.0` (container) / `127.0.0.1` (desktop) | Endereço de bind |
+| `PORT` / `ECHO_PORT` | `8000` | Porta dentro do container |
+| `ECHO_MODELS_DIR` | `/data/models` | Cache de modelos |
+| `ECHO_TEMP_DIR` | `/data/temp` | Uploads temporários |
+| `WHISPER_DEVICE` | `cpu` | Use `cuda` só com o override GPU |
+| `WHISPER_COMPUTE_TYPE` | `int8` | Adequado para CPU |
+| `CORS_ALLOW_ORIGINS` | `*` | Sem esta variável, o app desktop segue usando localhost / `tauri://localhost` |
+
+Copie `.env.example` para `.env` se quiser outra porta. A imagem **não** contém segredos; este serviço não usa API keys.
+
+### CPU vs GPU
+
+A imagem padrão instala **PyTorch CPU** e funciona sem driver NVIDIA. A transcrição é mais lenta que em GPU, sobretudo com `small` e `medium`.
+
+Override opcional de GPU (NVIDIA Container Toolkit; imagem bem maior):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build
+```
+
+Se o CUDA não aparecer no container, use só o arquivo CPU. Uma imagem com base CUDA (e suporte a NVIDIA DGX Spark) fica como follow-up.
+
+### Notas Docker
+
+- O primeiro `docker compose up --build` baixa o PyTorch (vários GB) e demora. Prefira `docker compose pull` quando `paladini/echo-transcribe:cpu` existir.
+- O healthcheck usa o `GET /health` já existente.
+- Este caminho **não** inclui a interface Tauri. Use `/docs` ou `curl`.
+- Publicar a porta `8000` numa interface de rede expõe uma API **sem autenticação**. Para restringir ao host: `127.0.0.1:8000:8000`.
 
 ## 🎯 Como Usar
 
@@ -143,6 +231,10 @@ npm run tauri build  # Build da aplicação completa
 # Backend (Python)
 cd src-tauri/backend
 python main.py       # Iniciar servidor backend standalone
+
+# API self-hosted (Docker, sem Node/Rust/GTK)
+docker compose up -d --build
+# GPU (opcional): docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build
 ```
 
 ## 🔧 Configuração
