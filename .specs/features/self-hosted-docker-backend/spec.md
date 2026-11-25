@@ -155,9 +155,9 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | Requirement ID | Story | Phase | Status |
 | -------------- | ----- | ----- | ------ |
 | DOCKER-01 | P1: Compose up + health | Tasks | Pending |
-| DOCKER-02 | P1: Container binds 0.0.0.0:8000 | Tasks | Pending |
+| DOCKER-02 | P1: Container binds 0.0.0.0:8000 | Tasks | Verified |
 | DOCKER-03 | P1: Named volumes | Tasks | Pending |
-| DOCKER-04 | P1: CPU torch index | Tasks | Pending |
+| DOCKER-04 | P1: CPU torch index | Tasks | Verified |
 | DOCKER-05 | P1: Default bind 127.0.0.1 | Tasks | Verified |
 | DOCKER-06 | P1: HOST env override | Tasks | Verified |
 | DOCKER-07 | P1: Port scan vs PORT env | Tasks | Verified |

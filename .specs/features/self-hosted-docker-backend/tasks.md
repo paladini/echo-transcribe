@@ -150,11 +150,11 @@ T7
 
 **Done when**:
 
-- [ ] Default `TORCH_INDEX_URL` is `https://download.pytorch.org/whl/cpu`
-- [ ] `ENV HOST=0.0.0.0` and `PORT=8000`
-- [ ] HEALTHCHECK curls `http://127.0.0.1:8000/health`
-- [ ] Gate check passes: `docker buildx build --check -f src-tauri/backend/Dockerfile src-tauri/backend`
-- [ ] Test count: 13 tests pass (unchanged)
+- [x] Default `TORCH_INDEX_URL` is `https://download.pytorch.org/whl/cpu`
+- [x] `ENV HOST=0.0.0.0` and `PORT=8000`
+- [x] HEALTHCHECK curls `http://127.0.0.1:8000/health`
+- [x] Gate check passes: `docker buildx build --check -f src-tauri/backend/Dockerfile src-tauri/backend`
+- [x] Test count: 13 tests pass (unchanged)
 
 **Tests**: none
 **Gate**: build
