@@ -204,10 +204,10 @@ T7
 
 **Done when**:
 
-- [ ] PR job runs compose config, `docker buildx build --check`, py_compile, and pytest
-- [ ] `.github/workflows/release.yml` is unchanged from origin/main
-- [ ] Gate check passes: build gate command
-- [ ] Test count: 13 tests pass (unchanged)
+- [x] PR job runs compose config, `docker buildx build --check`, py_compile, and pytest
+- [x] `.github/workflows/release.yml` is unchanged from origin/main
+- [x] Gate check passes: build gate command
+- [x] Test count: 13 tests pass (unchanged)
 
 **Tests**: none
 **Gate**: build

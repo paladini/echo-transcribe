@@ -7,6 +7,7 @@ on:
       - "src-tauri/backend/.dockerignore"
       - "src-tauri/backend/main.py"
       - "src-tauri/backend/requirements.txt"
+      - "src-tauri/backend/tests/**"
       - "docker-compose.yml"
       - "docker-compose.gpu.yml"
       - ".dockerignore"
@@ -17,6 +18,7 @@ on:
       - "src-tauri/backend/.dockerignore"
       - "src-tauri/backend/main.py"
       - "src-tauri/backend/requirements.txt"
+      - "src-tauri/backend/tests/**"
       - "docker-compose.yml"
       - "docker-compose.gpu.yml"
       - ".dockerignore"
@@ -42,3 +44,8 @@ jobs:
 
       - name: Python syntax of backend entrypoint
         run: python3 -m py_compile src-tauri/backend/main.py src-tauri/backend/start_backend.py
+
+      - name: Backend unit tests
+        run: |
+          python3 -m pip install --quiet fastapi uvicorn python-multipart pydantic python-dotenv pytest httpx
+          python3 -m pytest src-tauri/backend/tests -q
