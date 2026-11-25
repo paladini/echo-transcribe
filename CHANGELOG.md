@@ -7,11 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-25
+
 ### Added
 - Self-hosted Docker path for the FastAPI/faster-whisper backend (`Dockerfile`, `docker-compose.yml`) so transcription can run without Node, Rust, or GTK. The Tauri desktop app remains the primary product.
 - Optional NVIDIA GPU Compose override (`docker-compose.gpu.yml`).
 - `HOST` / `PORT` (and `ECHO_*` data-dir) environment variables so the API can bind `0.0.0.0` in a container while the desktop app still defaults to localhost.
-- CPU image publish on `v*` tags to GHCR (`ghcr.io/paladini/echo-transcribe`). Docker Hub (`paladini/echo-transcribe`) is pushed when Hub credentials are configured.
+- CPU image publish on `v*` tags to GHCR (`ghcr.io/paladini/echo-transcribe`) and Docker Hub (`paladini/echo-transcribe`).
 
 ## [0.1.1] - 2025-09-02
 
